@@ -2,7 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 
+let cachedApp: any;
+
 async function bootstrap() {
+  if (cachedApp) {
+    return cachedApp;
+  }
+
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
@@ -11,7 +17,14 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.enableCors(); // Enable CORS for frontend
+
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  await app.init();
 
   if (process.env.NODE_ENV !== 'production') {
     const port = process.env.PORT || 8002;
@@ -19,7 +32,8 @@ async function bootstrap() {
     console.log(`Application is running on: http://localhost:${port}`);
   }
 
-  return app.getHttpAdapter().getInstance();
+  cachedApp = app.getHttpAdapter().getInstance();
+  return cachedApp;
 }
 
 export default bootstrap();
