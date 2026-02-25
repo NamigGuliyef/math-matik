@@ -1,0 +1,110 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Quiz from './pages/Quiz';
+import Leaderboard from './pages/Leaderboard';
+
+// Admin Pages
+import AdminLayout from './components/layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import QuestionList from './pages/admin/QuestionList';
+import QuestionForm from './pages/admin/QuestionForm';
+import UserManagement from './pages/admin/UserManagement';
+import AdminGuard from './components/AdminGuard';
+
+import { LogOut, User as UserIcon, Award, LayoutDashboard, Trophy, Settings } from 'lucide-react';
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+const Navbar: React.FC = () => {
+  const { user, logout, isAuthenticated } = useAuth();
+
+  return (
+    <nav className="glass-card" style={{ borderRadius: '0', borderLeft: 'none', borderRight: 'none', borderTop: 'none', padding: '1rem 0', position: 'sticky', top: 0, zIndex: 100 }}>
+      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Award color="white" size={24} />
+          </div>
+          <span className="gradient-text" style={{ fontSize: '1.5rem', fontWeight: 800 }}>MATH-MATIK</span>
+        </Link>
+
+        {isAuthenticated ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            {user?.role === 'admin' && (
+              <Link to="/admin" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Settings size={20} /> Admin Panel
+              </Link>
+            )}
+            <Link to="/dashboard" style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <LayoutDashboard size={20} /> Panel
+            </Link>
+            <Link to="/leaderboard" style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Trophy size={20} /> Reytinq
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '2rem', border: '1px solid var(--border)' }}>
+              <UserIcon size={18} color="var(--primary)" />
+              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name} {user?.surname}</span>
+              <button
+                onClick={logout}
+                style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}
+                title="Çıxış"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <Link to="/login" className="btn" style={{ color: 'var(--text)', textDecoration: 'none' }}>Daxil Ol</Link>
+            <Link to="/register" className="btn btn-primary" style={{ textDecoration: 'none' }}>Qeydiyyat</Link>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Main App Routes */}
+          <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Navigate to="/dashboard" /></main></>} />
+
+          <Route path="/login" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Login /></main></>} />
+          <Route path="/register" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Register /></main></>} />
+
+          <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
+          <Route path="/quiz/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
+          <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="questions" element={<QuestionList />} />
+            <Route path="questions/new" element={<QuestionForm />} />
+            <Route path="questions/edit/:id" element={<QuestionForm />} />
+            <Route path="users" element={<UserManagement />} />
+          </Route>
+        </Routes>
+
+        <footer style={{ padding: '3rem 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          <div className="container">
+            <p>&copy; 2026 Math-Matik Quiz Platforması. Bütün hüquqlar qorunur.</p>
+            <p style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>Riyaziyyatı bizimlə öyrənin və zirvələrə yüksəlin!</p>
+          </div>
+        </footer>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+};
+
+export default App;
