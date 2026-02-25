@@ -12,7 +12,14 @@ async function bootstrap() {
     }),
   );
   app.enableCors(); // Enable CORS for frontend
-  await app.listen(8002);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+
+  if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 8002;
+    await app.listen(port);
+    console.log(`Application is running on: http://localhost:${port}`);
+  }
+
+  return app.getHttpAdapter().getInstance();
 }
-bootstrap();
+
+export default bootstrap();
