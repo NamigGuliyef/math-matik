@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8002', // Backend URL
+    baseURL: 'https://math-back.vercel.app', // Backend URL
 });
 
 api.interceptors.request.use((config) => {
