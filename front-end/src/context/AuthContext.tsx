@@ -15,6 +15,7 @@ interface User {
     restEndTime?: string;
     levelProgress?: Record<string, number>;
     sessionWrongAnswers?: number;
+    answeredQuestions?: string[];
 }
 
 

@@ -161,7 +161,6 @@ export class UsersService {
       }
     } else {
       query.$inc.wrongAnswers = 1;
-      query.$inc.sessionWrongAnswers = 1;
 
       // Check if this was the 5th mistake
       if ((user.sessionWrongAnswers || 0) + 1 >= 5) {
@@ -169,6 +168,8 @@ export class UsersService {
         query.$set.restEndTime = restEndTime;
         query.$set.quizStartTime = null;
         query.$set.sessionWrongAnswers = 0;
+      } else {
+        query.$inc.sessionWrongAnswers = 1;
       }
     }
 
@@ -176,7 +177,7 @@ export class UsersService {
       .findByIdAndUpdate(userId, query, { new: true })
       .exec();
 
-    if (updatedUser && updatedUser.restEndTime && !isCorrect && updatedUser.sessionWrongAnswers === 0) {
+    if (updatedUser && updatedUser.restEndTime && !isCorrect) {
       return { user: updatedUser, addedReward: 0, error: 'OUT_OF_CHANCES' };
     }
 

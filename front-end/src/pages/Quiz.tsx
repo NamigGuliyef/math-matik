@@ -95,9 +95,20 @@ const Quiz: React.FC = () => {
                 setQuestions(allQuestions);
                 updateUser(updatedUser);
 
-                // Load progress
-                const savedIndex = updatedUser.levelProgress?.[level || ''] || 0;
-                setCurrentIndex(savedIndex >= allQuestions.length ? 0 : savedIndex);
+                // Load progress based on answeredQuestions IDs
+                const answeredIds = updatedUser.answeredQuestions || [];
+                let progressIndex = 0;
+
+                // Find how many of the fetched questions are already answered
+                for (let i = 0; i < allQuestions.length; i++) {
+                    if (answeredIds.includes(allQuestions[i]._id)) {
+                        progressIndex = i + 1;
+                    } else {
+                        break; // Stop at the first unanswered question
+                    }
+                }
+
+                setCurrentIndex(progressIndex >= allQuestions.length ? 0 : progressIndex);
 
                 // Handle timer
                 if (updatedUser.quizStartTime) {
@@ -136,14 +147,14 @@ const Quiz: React.FC = () => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [level, user, navigate]);
+    }, [level]); // Removed user and navigate from dependencies to prevent infinite loop/flicker
 
     useEffect(() => {
-        if (timeLeft !== null && timeLeft > 0) {
+        if (timeLeft !== null && timeLeft > 0 && !isResting) {
             timerRef.current = setInterval(() => {
                 setTimeLeft(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
             }, 1000);
-        } else if (timeLeft === 0) {
+        } else if (timeLeft === 0 && !isResting) {
             // Timer expired — call backend so it sets restEndTime, then show countdown
             const triggerRest = async () => {
                 try {
@@ -169,7 +180,7 @@ const Quiz: React.FC = () => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [timeLeft]);
+    }, [timeLeft, isResting]); // Add isResting to clear interval when resting starts
 
     useEffect(() => {
         let restInterval: any;
@@ -205,6 +216,7 @@ const Quiz: React.FC = () => {
                 });
 
                 if (response.data.error === 'TIME_UP' || response.data.error === 'REST_PERIOD' || response.data.error === 'OUT_OF_CHANCES') {
+                    if (timerRef.current) clearInterval(timerRef.current);
                     setIsRestingState(true);
                     updateUser(response.data.user);
                     return;
@@ -249,7 +261,7 @@ const Quiz: React.FC = () => {
                     <Clock size={60} color="var(--primary)" style={{ marginBottom: '1.5rem' }} />
                     <h2 style={{ marginBottom: '1rem' }}>İstirahət vaxtıdır!</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
-                        {user?.sessionWrongAnswers === 0 && user.restEndTime ? '5 səhv etdiyiniz üçün limitiniz bitib.' : 'Limitiniz bitib.'} Beyninizi dincəltmək üçün 1 saat gözləməlisiniz.
+                        Beyninizi dincəltmək üçün 1 saat gözləməlisiniz.
                     </p>
                     {restTimeLeft !== null && (
                         <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '2rem' }}>
