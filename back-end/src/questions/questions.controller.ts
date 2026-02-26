@@ -23,7 +23,7 @@ export class QuestionsController {
     private questionsService: QuestionsService,
     private usersService: UsersService,
     private activityService: ActivityService,
-  ) {}
+  ) { }
 
   @Get()
   async getAll() {
@@ -38,6 +38,11 @@ export class QuestionsController {
   @Get('available-levels')
   async getAvailableLevels() {
     return this.questionsService.getAvailableLevels();
+  }
+
+  @Get('level-counts')
+  async getLevelQuestionCounts() {
+    return this.questionsService.getLevelQuestionCounts();
   }
 
   @UseGuards(JwtAuthGuard)

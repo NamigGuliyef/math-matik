@@ -27,30 +27,30 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="glass-card" style={{ borderRadius: '0', borderLeft: 'none', borderRight: 'none', borderTop: 'none', padding: '1rem 0', position: 'sticky', top: 0, zIndex: 100 }}>
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="container navbar-inner">
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Award color="white" size={24} />
           </div>
-          <span className="gradient-text" style={{ fontSize: '1.5rem', fontWeight: 800 }}>MATH-MATIK</span>
+          <span className="gradient-text navbar-logo-text" style={{ fontSize: '1.5rem', fontWeight: 800 }}>MATH-MATIK</span>
         </Link>
 
         {isAuthenticated ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          <div className="navbar-links">
             {user?.role === 'admin' && (
               <Link to="/admin" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Settings size={20} /> Admin Panel
+                <Settings size={20} /><span className="navbar-link-text">Admin Panel</span>
               </Link>
             )}
             <Link to="/dashboard" style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <LayoutDashboard size={20} /> Panel
+              <LayoutDashboard size={20} /><span className="navbar-link-text">Panel</span>
             </Link>
             <Link to="/leaderboard" style={{ color: 'var(--text)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Trophy size={20} /> Reytinq
+              <Trophy size={20} /><span className="navbar-link-text">Reytinq</span>
             </Link>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '2rem', border: '1px solid var(--border)' }}>
+            <div className="navbar-user-pill">
               <UserIcon size={18} color="var(--primary)" />
-              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name} {user?.surname}</span>
+              <span className="navbar-username" style={{ fontWeight: 600, fontSize: '0.9rem' }}>{user?.name} {user?.surname}</span>
               <button
                 onClick={logout}
                 style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}
@@ -61,7 +61,7 @@ const Navbar: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
             <Link to="/login" className="btn" style={{ color: 'var(--text)', textDecoration: 'none' }}>Daxil Ol</Link>
             <Link to="/register" className="btn btn-primary" style={{ textDecoration: 'none' }}>Qeydiyyat</Link>
           </div>
@@ -70,6 +70,7 @@ const Navbar: React.FC = () => {
     </nav>
   );
 };
+
 
 const App: React.FC = () => {
   return (

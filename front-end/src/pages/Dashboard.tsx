@@ -1,27 +1,53 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, TrendingUp, AlertCircle, PlayCircle, Star, Timer } from 'lucide-react';
+import { Trophy, TrendingUp, AlertCircle, PlayCircle, Star, Timer, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
+
+const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5'];
 
 const Dashboard: React.FC = () => {
     const { user } = useAuth();
     const [availableLevels, setAvailableLevels] = React.useState<string[]>([]);
+    const [levelCounts, setLevelCounts] = React.useState<Record<string, number>>({});
+
+    const isStudent = user?.role === 'student';
 
     useEffect(() => {
-        const fetchAvailableLevels = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get('/questions/available-levels');
-                setAvailableLevels(response.data);
+                const [levelsRes, countsRes] = await Promise.all([
+                    api.get('/questions/available-levels'),
+                    api.get('/questions/level-counts'),
+                ]);
+                setAvailableLevels(levelsRes.data);
+                setLevelCounts(countsRes.data);
             } catch (err) {
-                console.error('Error fetching available levels:', err);
-                // Fallback to level1 as default available
+                console.error('Error fetching level data:', err);
                 setAvailableLevels(['level1']);
             }
         };
-        fetchAvailableLevels();
+        fetchData();
     }, []);
+
+    // Check if a level is fully completed by comparing levelProgress to total question count
+    const isLevelCompleted = (level: string): boolean => {
+        const totalQuestions = levelCounts[level];
+        if (!totalQuestions) return false;
+        const progress = user?.levelProgress?.[level] ?? 0;
+        return progress >= totalQuestions;
+    };
+
+    // For students: a level is accessible if all previous levels are completed
+    // For admins: all available levels are accessible
+    const isLevelAccessible = (level: string, index: number): boolean => {
+        if (!availableLevels.includes(level)) return false;
+        if (!isStudent) return true;
+        if (index === 0) return true; // level1 always open
+        const previousLevel = LEVELS[index - 1];
+        return isLevelCompleted(previousLevel);
+    };
 
     const statCards = [
         { label: 'Düzgün Cavablar', value: user?.correctAnswers || 0, icon: <Trophy color="var(--success)" />, color: 'var(--success)' },
@@ -30,9 +56,19 @@ const Dashboard: React.FC = () => {
         { label: 'Səviyyə', value: user?.level?.toUpperCase() || 'LEVEL 1', icon: <TrendingUp color="var(--primary)" />, color: 'var(--primary)' },
     ];
 
+    const levelDescriptions = [
+        'Riyazi toplama və çıxma misalları',
+        'Orta çətinlikli məsələlər.',
+        'Mürəkkəb riyazi problemlər.',
+        'Məntiqi təfəkkür sualları.',
+        'Olimpiada səviyyəli tapşırıqlar.',
+    ];
+
+    const levelColors = ['#4f46e5', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+
     return (
         <div className="container">
-            <header style={{ marginBottom: '3rem' }}>
+            <header className="dashboard-header" style={{ marginBottom: '3rem' }}>
                 <motion.h1
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -43,7 +79,7 @@ const Dashboard: React.FC = () => {
                 <p style={{ color: 'var(--text-muted)' }}>Bugün hansı riyazi zirvəni fəth edəcəyik?</p>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
+            <div className="stats-grid">
                 {statCards.map((stat, index) => (
                     <motion.div
                         key={index}
@@ -57,8 +93,8 @@ const Dashboard: React.FC = () => {
                             {stat.icon}
                         </div>
                         <div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>{stat.label}</p>
-                            <h3 style={{ fontSize: '1.5rem', color: stat.color }}>{stat.value}</h3>
+                            <p className="stat-card-label" style={{ color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>{stat.label}</p>
+                            <h3 className="stat-card-value" style={{ fontSize: '1.5rem', color: stat.color }}>{stat.value}</h3>
                         </div>
                     </motion.div>
                 ))}
@@ -66,25 +102,49 @@ const Dashboard: React.FC = () => {
 
             <section>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.75rem' }}>Mərhələ Seçimi</h2>
+                    <h2 className="section-title" style={{ fontSize: '1.75rem' }}>Mərhələ Seçimi</h2>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                    {['level1', 'level2', 'level3', 'level4', 'level5'].map((level, index) => {
+                <div className="levels-grid">
+                    {LEVELS.map((level, index) => {
                         const isAvailable = availableLevels.includes(level);
+                        const accessible = isLevelAccessible(level, index);
+                        const completed = isLevelCompleted(level);
+                        // Locked = exists in DB but student hasn't finished the previous level
+                        const locked = isAvailable && isStudent && !accessible;
+
                         return (
                             <motion.div
                                 key={level}
-                                whileHover={isAvailable ? { y: -10 } : {}}
+                                whileHover={accessible ? { y: -10 } : {}}
                                 className="glass-card"
                                 style={{
                                     overflow: 'hidden',
                                     position: 'relative',
-                                    opacity: isAvailable ? 1 : 0.7,
-                                    cursor: isAvailable ? 'pointer' : 'not-allowed',
-                                    filter: isAvailable ? 'none' : 'grayscale(0.5)'
+                                    opacity: isAvailable ? (accessible ? 1 : 0.65) : 0.7,
+                                    cursor: accessible ? 'pointer' : 'not-allowed',
+                                    filter: accessible ? 'none' : 'grayscale(0.5)',
                                 }}
                             >
+                                {/* Lock icon for student-locked levels */}
+                                {locked && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '1rem',
+                                        right: '1rem',
+                                        zIndex: 10,
+                                        background: 'rgba(0,0,0,0.55)',
+                                        borderRadius: '50%',
+                                        padding: '0.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <Lock size={16} color="#f59e0b" />
+                                    </div>
+                                )}
+
+                                {/* Not-in-DB icon */}
                                 {!isAvailable && (
                                     <div style={{
                                         position: 'absolute',
@@ -96,34 +156,59 @@ const Dashboard: React.FC = () => {
                                         padding: '0.5rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
                                     }}>
                                         <Star size={16} color="var(--warning)" style={{ filter: 'grayscale(1)' }} />
                                     </div>
                                 )}
+
                                 <div style={{
                                     height: '120px',
-                                    background: `linear-gradient(135deg, ${index === 0 ? '#4f46e5' : index === 1 ? '#8b5cf6' : index === 2 ? '#ec4899' : index === 3 ? '#f59e0b' : '#10b981'}, #312e81)`,
+                                    background: `linear-gradient(135deg, ${levelColors[index]}, #312e81)`,
                                     padding: '1.5rem',
                                     display: 'flex',
                                     alignItems: 'flex-end',
-                                    opacity: isAvailable ? 1 : 0.5
+                                    opacity: accessible ? 1 : 0.5,
                                 }}>
                                     <h3 style={{ color: 'white', fontSize: '1.5rem' }}>{level.toUpperCase()}</h3>
                                 </div>
+
                                 <div style={{ padding: '1.5rem' }}>
                                     <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                                        {index === 0 ? 'Riyazi toplama və çıxma misalları' :
-                                            index === 1 ? 'Orta çətinlikli məsələlər.' :
-                                                index === 2 ? 'Mürəkkəb riyazi problemlər.' :
-                                                    index === 3 ? 'Məntiqi təfəkkür sualları.' : 'Olimpiada səviyyəli tapşırıqlar.'}
+                                        {levelDescriptions[index]}
                                     </p>
-                                    {isAvailable ? (
+
+                                    {accessible ? (
                                         <Link to={`/quiz/${level}`} className="btn btn-primary" style={{ width: '100%', textDecoration: 'none', gap: '0.5rem' }}>
-                                            <PlayCircle size={20} /> İndi Başla
+                                            <PlayCircle size={20} />
+                                            {completed ? 'Yenidən Oyna' : 'İndi Başla'}
                                         </Link>
+                                    ) : locked ? (
+                                        <button className="btn" disabled style={{
+                                            width: '100%',
+                                            background: 'var(--surface)',
+                                            color: 'var(--text-muted)',
+                                            border: '1px solid var(--border)',
+                                            cursor: 'not-allowed',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                        }}>
+                                            <Lock size={20} /> Əvvəlki mərhələni bitir
+                                        </button>
                                     ) : (
-                                        <button className="btn" disabled style={{ width: '100%', background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                        <button className="btn" disabled style={{
+                                            width: '100%',
+                                            background: 'var(--surface)',
+                                            color: 'var(--text-muted)',
+                                            border: '1px solid var(--border)',
+                                            cursor: 'not-allowed',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                        }}>
                                             <Timer size={20} /> Tezliklə
                                         </button>
                                     )}

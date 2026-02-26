@@ -6,6 +6,9 @@ import QuestionCard from '../components/QuestionCard';
 import { Loader2, Trophy, ArrowLeft, Timer, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5'];
+
+
 const Quiz: React.FC = () => {
     const { level } = useParams<{ level: string }>();
     const [questions, setQuestions] = useState<any[]>([]);
@@ -24,6 +27,27 @@ const Quiz: React.FC = () => {
     useEffect(() => {
         const checkStatusAndFetch = async () => {
             if (!user) return;
+
+            // --- Level access guard (students only) ---
+            if (user.role === 'student' && level) {
+                const levelIndex = LEVELS.indexOf(level);
+                if (levelIndex > 0) {
+                    const prevLevel = LEVELS[levelIndex - 1];
+                    try {
+                        const countsRes = await api.get('/questions/level-counts');
+                        const counts: Record<string, number> = countsRes.data;
+                        const prevTotal = counts[prevLevel] ?? 0;
+                        const prevProgress = user.levelProgress?.[prevLevel] ?? 0;
+                        if (prevTotal === 0 || prevProgress < prevTotal) {
+                            navigate('/dashboard', { replace: true });
+                            return;
+                        }
+                    } catch {
+                        navigate('/dashboard', { replace: true });
+                        return;
+                    }
+                }
+            }
 
             // Check if resting
             if (user.restEndTime) {
@@ -65,10 +89,19 @@ const Quiz: React.FC = () => {
                     const limitSeconds = 20 * 60;
 
                     if (diffSeconds >= limitSeconds) {
+                        // 20 min elapsed — call start again so backend sets restEndTime
+                        const restTriggerRes = await api.post('/questions/start');
+                        const restUser = restTriggerRes.data;
+                        updateUser(restUser);
                         setIsResting(true);
-                        // Refresh user
-                        const userRes = await api.get('/questions/status');
-                        updateUser(userRes.data);
+                        if (restUser.restEndTime) {
+                            const now2 = new Date();
+                            const restEnd = new Date(restUser.restEndTime);
+                            const remaining = Math.ceil((restEnd.getTime() - now2.getTime()) / 1000);
+                            setRestTimeLeft(remaining > 0 ? remaining : 3600);
+                        } else {
+                            setRestTimeLeft(3600);
+                        }
                     } else {
                         setTimeLeft(limitSeconds - diffSeconds);
                     }
@@ -93,7 +126,27 @@ const Quiz: React.FC = () => {
                 setTimeLeft(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
             }, 1000);
         } else if (timeLeft === 0) {
-            setIsResting(true);
+            // Timer expired — call backend so it sets restEndTime, then show countdown
+            const triggerRest = async () => {
+                try {
+                    const res = await api.post('/questions/start');
+                    const restUser = res.data;
+                    updateUser(restUser);
+                    if (restUser.restEndTime) {
+                        const now = new Date();
+                        const restEnd = new Date(restUser.restEndTime);
+                        const remaining = Math.ceil((restEnd.getTime() - now.getTime()) / 1000);
+                        setRestTimeLeft(remaining > 0 ? remaining : 3600);
+                    } else {
+                        setRestTimeLeft(3600);
+                    }
+                } catch (err) {
+                    console.error('Error triggering rest period:', err);
+                    setRestTimeLeft(3600);
+                }
+                setIsResting(true);
+            };
+            triggerRest();
         }
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);

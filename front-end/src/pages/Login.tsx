@@ -36,7 +36,7 @@ const Login: React.FC = () => {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card"
+                className="glass-card auth-card"
                 style={{ padding: '2.5rem', width: '100%', maxWidth: '450px' }}
             >
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -59,7 +59,7 @@ const Login: React.FC = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
+                    <div className="auth-name-row">
                         <div style={{ flex: 1 }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Ad</label>
                             <input

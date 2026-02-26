@@ -42,20 +42,23 @@ export class UsersService {
       updates.restEndTime = null;
     }
 
-    // 2. Check if a new session should start
-    // Start session if:
-    // - No quizStartTime exists
-    // - OR quizStartTime is older than 20 minutes (abandoned session)
-    // - AND user is not in a valid rest period
-    const shouldResetSession =
-      !user.quizStartTime ||
-      (user.quizStartTime &&
-        now.getTime() - user.quizStartTime.getTime() > 20 * 60 * 1000);
-
+    // 2. Check if a new session should start or rest should be enforced
     const isCurrentlyResting = user.restEndTime && now < user.restEndTime;
 
-    if (shouldResetSession && !isCurrentlyResting) {
-      updates.quizStartTime = now;
+    if (!isCurrentlyResting) {
+      if (!user.quizStartTime) {
+        // No active session — start a new one
+        updates.quizStartTime = now;
+      } else {
+        const elapsed = now.getTime() - user.quizStartTime.getTime();
+        if (elapsed > 20 * 60 * 1000) {
+          // 20 min passed but restEndTime was never set (timer expired client-side)
+          // Enforce rest period now instead of starting a new session
+          updates.restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
+          updates.quizStartTime = null;
+        }
+        // If time hasn't expired yet, keep the existing session (do nothing)
+      }
     }
 
     if (Object.keys(updates).length > 0) {

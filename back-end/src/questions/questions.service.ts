@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 export class QuestionsService {
   constructor(
     @InjectModel(Question.name) private questionModel: Model<Question>,
-  ) {}
+  ) { }
 
   async create(data: any): Promise<Question> {
     const newQuestion = new this.questionModel(data);
@@ -23,11 +23,11 @@ export class QuestionsService {
     const skip = (page - 1) * limit;
     const query = search
       ? {
-          $or: [
-            { text: { $regex: search, $options: 'i' } },
-            { level: { $regex: search, $options: 'i' } },
-          ],
-        }
+        $or: [
+          { text: { $regex: search, $options: 'i' } },
+          { level: { $regex: search, $options: 'i' } },
+        ],
+      }
       : {};
 
     const [questions, total] = await Promise.all([
@@ -107,5 +107,16 @@ export class QuestionsService {
 
   async getAvailableLevels(): Promise<string[]> {
     return this.questionModel.distinct('level').exec();
+  }
+
+  async getLevelQuestionCounts(): Promise<Record<string, number>> {
+    const counts = await this.questionModel.aggregate([
+      { $group: { _id: '$level', count: { $sum: 1 } } },
+    ]);
+    const result: Record<string, number> = {};
+    for (const item of counts) {
+      result[item._id] = item.count;
+    }
+    return result;
   }
 }
