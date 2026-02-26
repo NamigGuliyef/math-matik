@@ -49,6 +49,7 @@ export class UsersService {
       if (!user.quizStartTime) {
         // No active session — start a new one
         updates.quizStartTime = now;
+        updates.sessionWrongAnswers = 0;
       } else {
         const elapsed = now.getTime() - user.quizStartTime.getTime();
         if (elapsed > 20 * 60 * 1000) {
@@ -104,7 +105,7 @@ export class UsersService {
     const diffMins = diffMs / (1000 * 60);
 
     if (diffMins >= 20) {
-      const restEndTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour rest
+      const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
       const updatedUser = await this.userModel
         .findByIdAndUpdate(
           userId,
@@ -113,12 +114,32 @@ export class UsersService {
               restEndTime,
               quizStartTime: null,
               [`levelProgress.${level}`]: index,
+              sessionWrongAnswers: 0,
             },
           },
           { new: true },
         )
         .exec();
       return { user: updatedUser!, addedReward: 0, error: 'TIME_UP' };
+    }
+
+    // Check if chances are already gone (shouldn't happen with correct frontend, but for safety)
+    if (user.sessionWrongAnswers >= 5) {
+      const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
+      const updatedUser = await this.userModel
+        .findByIdAndUpdate(
+          userId,
+          {
+            $set: {
+              restEndTime,
+              quizStartTime: null,
+              sessionWrongAnswers: 0,
+            },
+          },
+          { new: true },
+        )
+        .exec();
+      return { user: updatedUser!, addedReward: 0, error: 'OUT_OF_CHANCES' };
     }
 
     const query: any = {
@@ -130,21 +151,35 @@ export class UsersService {
     let addedReward = 0;
 
     if (isCorrect) {
-      query.$inc.correctAnswers = 1;
       query.$set[`levelProgress.${level}`] = index;
       if (!user.answeredQuestions.includes(questionId)) {
         if (!query.$push) query.$push = {};
         query.$push.answeredQuestions = questionId;
         query.$inc.balance = reward;
+        query.$inc.correctAnswers = 1; // Only count unique correct answers
         addedReward = reward;
       }
     } else {
       query.$inc.wrongAnswers = 1;
+      query.$inc.sessionWrongAnswers = 1;
+
+      // Check if this was the 5th mistake
+      if ((user.sessionWrongAnswers || 0) + 1 >= 5) {
+        const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
+        query.$set.restEndTime = restEndTime;
+        query.$set.quizStartTime = null;
+        query.$set.sessionWrongAnswers = 0;
+      }
     }
 
     const updatedUser = await this.userModel
       .findByIdAndUpdate(userId, query, { new: true })
       .exec();
+
+    if (updatedUser && updatedUser.restEndTime && !isCorrect && updatedUser.sessionWrongAnswers === 0) {
+      return { user: updatedUser, addedReward: 0, error: 'OUT_OF_CHANCES' };
+    }
+
     return updatedUser ? { user: updatedUser, addedReward } : null;
   }
 

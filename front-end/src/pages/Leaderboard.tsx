@@ -101,7 +101,7 @@ const Leaderboard: React.FC = () => {
                                     </span>
                                 </td>
                                 <td style={{ padding: '1.5rem', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{student.correctAnswers}</td>
-                                <td style={{ padding: '1.5rem', textAlign: 'right', fontWeight: 800 }}>{student.balance}</td>
+                                <td style={{ padding: '1.5rem', textAlign: 'right', fontWeight: 800 }}>{Number(student.balance).toFixed(3)}</td>
                             </motion.tr>
                         ))}
                     </tbody>

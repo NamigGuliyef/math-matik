@@ -17,16 +17,36 @@ const Quiz: React.FC = () => {
     const [showFinished, setShowFinished] = useState(false);
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
-    const [isResting, setIsResting] = useState(false);
+    const [isRestingState, setIsRestingState] = useState(false);
     const [restTimeLeft, setRestTimeLeft] = useState<number | null>(null);
 
     const timerRef = useRef<any>(null);
     const navigate = useNavigate();
     const { user, updateUser } = useAuth();
 
+    // --- Robust Reactive Rest Logic ---
+    // Derived rest status to ensure immediate UI feedback even before useEffect runs
+    const isResting = isRestingState || (user?.restEndTime ? new Date() < new Date(user.restEndTime) : false);
+
+    const chances = 5 - (user?.sessionWrongAnswers || 0);
+
     useEffect(() => {
         const checkStatusAndFetch = async () => {
             if (!user) return;
+
+            // --- Immediate rest check from context ---
+            if (user.restEndTime) {
+                const now = new Date();
+                const restEnd = new Date(user.restEndTime);
+                if (now < restEnd) {
+                    setIsRestingState(true);
+                    setRestTimeLeft(Math.ceil((restEnd.getTime() - now.getTime()) / 1000));
+                    setIsLoading(false);
+                    return;
+                } else {
+                    setIsRestingState(false);
+                }
+            }
 
             // --- Level access guard (students only) ---
             if (user.role === 'student' && level) {
@@ -49,22 +69,6 @@ const Quiz: React.FC = () => {
                 }
             }
 
-            // Check if resting
-            if (user.restEndTime) {
-                const now = new Date();
-                const restEnd = new Date(user.restEndTime);
-                if (now < restEnd) {
-                    setIsResting(true);
-                    setRestTimeLeft(Math.ceil((restEnd.getTime() - now.getTime()) / 1000));
-                    setIsLoading(false);
-                    return;
-                } else {
-                    // Rest period ended, proceed to fetch
-                    setIsResting(false);
-                    setRestTimeLeft(null);
-                }
-            }
-
             try {
                 const [qRes, startRes] = await Promise.all([
                     api.get(`/questions/by-level?level=${level}`),
@@ -73,6 +77,20 @@ const Quiz: React.FC = () => {
 
                 const allQuestions = qRes.data;
                 const updatedUser = startRes.data;
+
+                // Check if the fresh status reveals a rest period (e.g., sessions expired)
+                if (updatedUser.restEndTime) {
+                    const now = new Date();
+                    const restEnd = new Date(updatedUser.restEndTime);
+                    if (now < restEnd) {
+                        setQuestions(allQuestions);
+                        updateUser(updatedUser);
+                        setIsRestingState(true);
+                        setRestTimeLeft(Math.ceil((restEnd.getTime() - now.getTime()) / 1000));
+                        setIsLoading(false);
+                        return;
+                    }
+                }
 
                 setQuestions(allQuestions);
                 updateUser(updatedUser);
@@ -93,7 +111,7 @@ const Quiz: React.FC = () => {
                         const restTriggerRes = await api.post('/questions/start');
                         const restUser = restTriggerRes.data;
                         updateUser(restUser);
-                        setIsResting(true);
+                        setIsRestingState(true);
                         if (restUser.restEndTime) {
                             const now2 = new Date();
                             const restEnd = new Date(restUser.restEndTime);
@@ -118,7 +136,7 @@ const Quiz: React.FC = () => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [level]);
+    }, [level, user, navigate]);
 
     useEffect(() => {
         if (timeLeft !== null && timeLeft > 0) {
@@ -144,7 +162,7 @@ const Quiz: React.FC = () => {
                     console.error('Error triggering rest period:', err);
                     setRestTimeLeft(3600);
                 }
-                setIsResting(true);
+                setIsRestingState(true);
             };
             triggerRest();
         }
@@ -186,8 +204,8 @@ const Quiz: React.FC = () => {
                     index: isCorrect ? currentIndex + 1 : currentIndex
                 });
 
-                if (response.data.error === 'TIME_UP' || response.data.error === 'REST_PERIOD') {
-                    setIsResting(true);
+                if (response.data.error === 'TIME_UP' || response.data.error === 'REST_PERIOD' || response.data.error === 'OUT_OF_CHANCES') {
+                    setIsRestingState(true);
                     updateUser(response.data.user);
                     return;
                 }
@@ -231,7 +249,7 @@ const Quiz: React.FC = () => {
                     <Clock size={60} color="var(--primary)" style={{ marginBottom: '1.5rem' }} />
                     <h2 style={{ marginBottom: '1rem' }}>İstirahət vaxtıdır!</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6' }}>
-                        Limitiniz bitib. Beyninizi dincəltmək üçün 1 saat gözləməlisiniz.
+                        {user?.sessionWrongAnswers === 0 && user.restEndTime ? '5 səhv etdiyiniz üçün limitiniz bitib.' : 'Limitiniz bitib.'} Beyninizi dincəltmək üçün 1 saat gözləməlisiniz.
                     </p>
                     {restTimeLeft !== null && (
                         <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '2rem' }}>
@@ -282,20 +300,34 @@ const Quiz: React.FC = () => {
                 </button>
 
                 {timeLeft !== null && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.5rem 1rem',
-                        background: timeLeft < 60 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '12px',
-                        color: timeLeft < 60 ? '#ef4444' : 'inherit'
-                    }}>
-                        <Timer size={18} />
-                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '1.1rem' }}>
-                            {formatTime(timeLeft)}
-                        </span>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 1rem',
+                            background: chances <= 1 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '12px',
+                            color: chances <= 1 ? '#ef4444' : 'inherit'
+                        }}>
+                            <span style={{ fontWeight: 700 }}>Şanslar: {chances}/5</span>
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 1rem',
+                            background: timeLeft < 60 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '12px',
+                            color: timeLeft < 60 ? '#ef4444' : 'inherit'
+                        }}>
+                            <Timer size={18} />
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '1.1rem' }}>
+                                {formatTime(timeLeft)}
+                            </span>
+                        </div>
                     </div>
                 )}
             </div>

@@ -11,7 +11,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private activityService: ActivityService,
-  ) {}
+  ) { }
 
   async register(userData: any) {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -61,6 +61,10 @@ export class AuthService {
         correctAnswers: user.correctAnswers,
         wrongAnswers: user.wrongAnswers,
         totalAnswered: user.totalAnswered,
+        restEndTime: user.restEndTime,
+        quizStartTime: user.quizStartTime,
+        levelProgress: user.levelProgress,
+        sessionWrongAnswers: user.sessionWrongAnswers,
       },
     };
   }

@@ -14,6 +14,7 @@ interface User {
     quizStartTime?: string;
     restEndTime?: string;
     levelProgress?: Record<string, number>;
+    sessionWrongAnswers?: number;
 }
 
 

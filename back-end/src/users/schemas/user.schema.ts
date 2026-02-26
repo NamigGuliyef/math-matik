@@ -49,6 +49,9 @@ export class User extends Document {
 
   @Prop({ type: Map, of: Number, default: {} })
   levelProgress: Map<string, number>;
+
+  @Prop({ default: 0 })
+  sessionWrongAnswers: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

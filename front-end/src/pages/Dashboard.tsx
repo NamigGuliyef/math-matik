@@ -8,7 +8,7 @@ import api from '../api/client';
 const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5'];
 
 const Dashboard: React.FC = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [availableLevels, setAvailableLevels] = React.useState<string[]>([]);
     const [levelCounts, setLevelCounts] = React.useState<Record<string, number>>({});
 
@@ -17,14 +17,18 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [levelsRes, countsRes] = await Promise.all([
+                const [levelsRes, countsRes, statusRes] = await Promise.all([
                     api.get('/questions/available-levels'),
                     api.get('/questions/level-counts'),
+                    api.get('/questions/status'),
                 ]);
                 setAvailableLevels(levelsRes.data);
                 setLevelCounts(countsRes.data);
+                if (statusRes.data) {
+                    updateUser(statusRes.data);
+                }
             } catch (err) {
-                console.error('Error fetching level data:', err);
+                console.error('Error fetching dashboard data:', err);
                 setAvailableLevels(['level1']);
             }
         };
@@ -52,7 +56,7 @@ const Dashboard: React.FC = () => {
     const statCards = [
         { label: 'Düzgün Cavablar', value: user?.correctAnswers || 0, icon: <Trophy color="var(--success)" />, color: 'var(--success)' },
         { label: 'Səhv Cavablar', value: user?.wrongAnswers || 0, icon: <AlertCircle color="var(--error)" />, color: 'var(--error)' },
-        { label: 'Ümumi Balans', value: `${user?.balance || 0} AZN`, icon: <Star color="var(--warning)" />, color: 'var(--warning)' },
+        { label: 'Ümumi Balans', value: `${Number(user?.balance || 0).toFixed(3)} AZN`, icon: <Star color="var(--warning)" />, color: 'var(--warning)' },
         { label: 'Səviyyə', value: user?.level?.toUpperCase() || 'LEVEL 1', icon: <TrendingUp color="var(--primary)" />, color: 'var(--primary)' },
     ];
 
