@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Trophy, TrendingUp, AlertCircle, PlayCircle, Star, Timer, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import api from '../api/client';
+import RulesModal from '../components/RulesModal';
+import { useNavigate } from 'react-router-dom';
 
 const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5'];
 
@@ -11,6 +12,10 @@ const Dashboard: React.FC = () => {
     const { user, updateUser } = useAuth();
     const [availableLevels, setAvailableLevels] = React.useState<string[]>([]);
     const [levelCounts, setLevelCounts] = React.useState<Record<string, number>>({});
+    const [isRulesModalOpen, setIsRulesModalOpen] = React.useState(false);
+    const [selectedLevel, setSelectedLevel] = React.useState<string | null>(null);
+
+    const navigate = useNavigate();
 
     const isStudent = user?.role === 'student';
 
@@ -59,6 +64,18 @@ const Dashboard: React.FC = () => {
         { label: 'Ümumi Balans', value: `${Number(user?.balance || 0).toFixed(3)} AZN`, icon: <Star color="var(--warning)" />, color: 'var(--warning)' },
         { label: 'Səviyyə', value: user?.level?.toUpperCase() || 'LEVEL 1', icon: <TrendingUp color="var(--primary)" />, color: 'var(--primary)' },
     ];
+
+    const handleLevelStart = (level: string) => {
+        setSelectedLevel(level);
+        setIsRulesModalOpen(true);
+    };
+
+    const handleConfirmStart = () => {
+        if (selectedLevel) {
+            navigate(`/quiz/${selectedLevel}`);
+        }
+        setIsRulesModalOpen(false);
+    };
 
     const levelDescriptions = [
         'Riyazi toplama və çıxma misalları',
@@ -183,10 +200,14 @@ const Dashboard: React.FC = () => {
                                     </p>
 
                                     {accessible ? (
-                                        <Link to={`/quiz/${level}`} className="btn btn-primary" style={{ width: '100%', textDecoration: 'none', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={() => handleLevelStart(level)}
+                                            className="btn btn-primary"
+                                            style={{ width: '100%', gap: '0.5rem' }}
+                                        >
                                             <PlayCircle size={20} />
                                             {completed ? 'Yenidən Oyna' : 'İndi Başla'}
-                                        </Link>
+                                        </button>
                                     ) : locked ? (
                                         <button className="btn" disabled style={{
                                             width: '100%',
@@ -222,6 +243,13 @@ const Dashboard: React.FC = () => {
                     })}
                 </div>
             </section>
+
+            <RulesModal
+                isOpen={isRulesModalOpen}
+                levelName={selectedLevel || ''}
+                onClose={() => setIsRulesModalOpen(false)}
+                onConfirm={handleConfirmStart}
+            />
         </div>
     );
 };
