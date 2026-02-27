@@ -26,18 +26,20 @@ const Quiz: React.FC = () => {
 
     // --- Robust Reactive Rest Logic ---
     // Derived rest status to ensure immediate UI feedback even before useEffect runs
-    const isResting = isRestingState || (user?.restEndTime ? new Date() < new Date(user.restEndTime) : false);
+    const currentRestEndTime = user?.restEndTimes?.[level!];
+    const isResting = isRestingState || (currentRestEndTime ? new Date() < new Date(currentRestEndTime) : false);
 
-    const chances = 5 - (user?.sessionWrongAnswers || 0);
+    const currentWrongAnswers = user?.levelSessionWrongAnswers?.[level!] || 0;
+    const chances = 5 - currentWrongAnswers;
 
     useEffect(() => {
         const checkStatusAndFetch = async () => {
-            if (!user) return;
+            if (!user || !level) return;
 
             // --- Immediate rest check from context ---
-            if (user.restEndTime) {
+            if (currentRestEndTime) {
                 const now = new Date();
-                const restEnd = new Date(user.restEndTime);
+                const restEnd = new Date(currentRestEndTime);
                 if (now < restEnd) {
                     setIsRestingState(true);
                     setRestTimeLeft(Math.ceil((restEnd.getTime() - now.getTime()) / 1000));
@@ -45,6 +47,10 @@ const Quiz: React.FC = () => {
                     return;
                 } else {
                     setIsRestingState(false);
+                    // Clear it from context if it's expired
+                    const updatedRestEndTimes = { ...user.restEndTimes };
+                    delete updatedRestEndTimes[level];
+                    updateUser({ ...user, restEndTimes: updatedRestEndTimes });
                 }
             }
 
@@ -72,16 +78,17 @@ const Quiz: React.FC = () => {
             try {
                 const [qRes, startRes] = await Promise.all([
                     api.get(`/questions/by-level?level=${level}`),
-                    api.post('/questions/start')
+                    api.post('/questions/start', { level })
                 ]);
 
                 const allQuestions = qRes.data;
                 const updatedUser = startRes.data;
 
                 // Check if the fresh status reveals a rest period (e.g., sessions expired)
-                if (updatedUser.restEndTime) {
+                const freshRestEnd = updatedUser.restEndTimes?.[level];
+                if (freshRestEnd) {
                     const now = new Date();
-                    const restEnd = new Date(updatedUser.restEndTime);
+                    const restEnd = new Date(freshRestEnd);
                     if (now < restEnd) {
                         setQuestions(allQuestions);
                         updateUser(updatedUser);
@@ -111,21 +118,23 @@ const Quiz: React.FC = () => {
                 setCurrentIndex(progressIndex >= allQuestions.length ? 0 : progressIndex);
 
                 // Handle timer
-                if (updatedUser.quizStartTime) {
-                    const startTime = new Date(updatedUser.quizStartTime);
+                const freshQuizStart = updatedUser.quizStartTimes?.[level];
+                if (freshQuizStart) {
+                    const startTime = new Date(freshQuizStart);
                     const now = new Date();
                     const diffSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
                     const limitSeconds = 20 * 60;
 
                     if (diffSeconds >= limitSeconds) {
                         // 20 min elapsed — call start again so backend sets restEndTime
-                        const restTriggerRes = await api.post('/questions/start');
+                        const restTriggerRes = await api.post('/questions/start', { level });
                         const restUser = restTriggerRes.data;
                         updateUser(restUser);
                         setIsRestingState(true);
-                        if (restUser.restEndTime) {
+                        const finalRestEnd = restUser.restEndTimes?.[level];
+                        if (finalRestEnd) {
                             const now2 = new Date();
-                            const restEnd = new Date(restUser.restEndTime);
+                            const restEnd = new Date(finalRestEnd);
                             const remaining = Math.ceil((restEnd.getTime() - now2.getTime()) / 1000);
                             setRestTimeLeft(remaining > 0 ? remaining : 3600);
                         } else {
@@ -158,12 +167,13 @@ const Quiz: React.FC = () => {
             // Timer expired — call backend so it sets restEndTime, then show countdown
             const triggerRest = async () => {
                 try {
-                    const res = await api.post('/questions/start');
+                    const res = await api.post('/questions/start', { level });
                     const restUser = res.data;
                     updateUser(restUser);
-                    if (restUser.restEndTime) {
+                    const freshRestEnd = restUser.restEndTimes?.[level!];
+                    if (freshRestEnd) {
                         const now = new Date();
-                        const restEnd = new Date(restUser.restEndTime);
+                        const restEnd = new Date(freshRestEnd);
                         const remaining = Math.ceil((restEnd.getTime() - now.getTime()) / 1000);
                         setRestTimeLeft(remaining > 0 ? remaining : 3600);
                     } else {

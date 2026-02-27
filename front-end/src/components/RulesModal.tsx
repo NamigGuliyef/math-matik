@@ -5,11 +5,13 @@ import { BookOpen, CheckCircle2, XCircle, Timer, Clock, Rocket } from 'lucide-re
 interface RulesModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: (dontShowAgain: boolean) => void;
     levelName: string;
 }
 
 const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, onConfirm, levelName }) => {
+    const [dontShowAgain, setDontShowAgain] = React.useState(false);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -76,7 +78,7 @@ const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, onConfirm, lev
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{levelName.toUpperCase()} üçün qaydalarla tanış olun.</p>
                             </div>
 
-                            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '2rem' }}>
+                            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
                                 <RuleItem
                                     icon={<Timer size={18} color="var(--primary)" />}
                                     title="Sessiya Müddəti"
@@ -99,6 +101,34 @@ const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, onConfirm, lev
                                 />
                             </div>
 
+                            {/* Don't show again checkbox */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                marginBottom: '1.5rem',
+                                padding: '0.5rem',
+                                cursor: 'pointer',
+                                background: 'rgba(255,255,255,0.02)',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.05)'
+                            }} onClick={() => setDontShowAgain(!dontShowAgain)}>
+                                <div style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '5px',
+                                    border: '2px solid var(--primary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: dontShowAgain ? 'var(--primary)' : 'transparent',
+                                    transition: 'all 0.2s ease'
+                                }}>
+                                    {dontShowAgain && <CheckCircle2 size={14} color="white" />}
+                                </div>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Bir daha göstərmə</span>
+                            </div>
+
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
                                 <button
                                     className="btn"
@@ -115,7 +145,7 @@ const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose, onConfirm, lev
                                 </button>
                                 <button
                                     className="btn btn-primary"
-                                    onClick={onConfirm}
+                                    onClick={() => onConfirm(dontShowAgain)}
                                     style={{
                                         flex: 2,
                                         padding: '0.6rem',

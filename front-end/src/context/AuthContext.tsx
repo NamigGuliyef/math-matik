@@ -11,10 +11,10 @@ interface User {
     correctAnswers: number;
     wrongAnswers: number;
     totalAnswered: number;
-    quizStartTime?: string;
-    restEndTime?: string;
+    quizStartTimes?: Record<string, string>; // Maps are serialized as objects in JSON
+    restEndTimes?: Record<string, string>;
     levelProgress?: Record<string, number>;
-    sessionWrongAnswers?: number;
+    levelSessionWrongAnswers?: Record<string, number>;
     answeredQuestions?: string[];
 }
 
@@ -51,6 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+
+        // Clear quiz rules skip preferences from session storage
+        Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('skipRules_')) {
+                sessionStorage.removeItem(key);
+            }
+        });
     };
 
     const updateUser = (userData: User) => {

@@ -9,7 +9,7 @@ import { ActivityModule } from './activity/activity.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
-      'mongodb+srv://football:football1@cluster0.kk1kc8e.mongodb.net/math?retryWrites=true&w=majority&appName=Cluster0',
+      'mongodb://football:football1@ac-qpwsq2x-shard-00-00.kk1kc8e.mongodb.net:27017,ac-qpwsq2x-shard-00-01.kk1kc8e.mongodb.net:27017,ac-qpwsq2x-shard-00-02.kk1kc8e.mongodb.net:27017/math?replicaSet=atlas-4hkr4k-shard-0&ssl=true&authSource=admin',
     ),
     AuthModule,
     UsersModule,
@@ -20,4 +20,4 @@ import { ActivityModule } from './activity/activity.module';
   controllers: [LeaderboardController],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

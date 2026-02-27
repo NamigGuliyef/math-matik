@@ -61,10 +61,10 @@ export class AuthService {
         correctAnswers: user.correctAnswers,
         wrongAnswers: user.wrongAnswers,
         totalAnswered: user.totalAnswered,
-        restEndTime: user.restEndTime,
-        quizStartTime: user.quizStartTime,
+        quizStartTimes: user.quizStartTimes,
+        restEndTimes: user.restEndTimes,
         levelProgress: user.levelProgress,
-        sessionWrongAnswers: user.sessionWrongAnswers,
+        levelSessionWrongAnswers: user.levelSessionWrongAnswers,
       },
     };
   }

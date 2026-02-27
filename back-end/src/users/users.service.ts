@@ -30,35 +30,53 @@ export class UsersService {
       .exec();
   }
 
-  async startQuiz(userId: string): Promise<User | null> {
+  async startQuiz(userId: string, level: string): Promise<User | null> {
     const user = await this.userModel.findById(userId);
     if (!user) return null;
 
     const now = new Date();
     const updates: any = {};
 
-    // 1. Check if rest period has expired
-    if (user.restEndTime && now >= user.restEndTime) {
-      updates.restEndTime = null;
+    // Use default values for maps if they don't exist
+    const quizStartTimes = user.quizStartTimes || new Map();
+    const restEndTimes = user.restEndTimes || new Map();
+
+    const currentQuizStartTime = quizStartTimes.get(level);
+    const currentRestEndTime = restEndTimes.get(level);
+
+    // 1. Check if rest period for this level has expired
+    if (currentRestEndTime && now >= currentRestEndTime) {
+      updates[`restEndTimes.${level}`] = null;
     }
 
     // 2. Check if a new session should start or rest should be enforced
-    const isCurrentlyResting = user.restEndTime && now < user.restEndTime;
+    const isCurrentlyResting = currentRestEndTime && now < currentRestEndTime;
 
     if (!isCurrentlyResting) {
-      if (!user.quizStartTime) {
-        // No active session — start a new one
-        updates.quizStartTime = now;
-        updates.sessionWrongAnswers = 0;
+      if (!currentQuizStartTime) {
+        // No active session for this level — start a new one
+        updates[`quizStartTimes.${level}`] = now;
+        updates[`levelSessionWrongAnswers.${level}`] = 0;
       } else {
-        const elapsed = now.getTime() - user.quizStartTime.getTime();
-        if (elapsed > 20 * 60 * 1000) {
-          // 20 min passed but restEndTime was never set (timer expired client-side)
-          // Enforce rest period now instead of starting a new session
-          updates.restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
-          updates.quizStartTime = null;
+        const quizDuration = 20 * 60 * 1000;
+        const restDuration = 60 * 60 * 1000;
+        const elapsed = now.getTime() - currentQuizStartTime.getTime();
+
+        if (elapsed > quizDuration) {
+          // Session expired. Calculate when rest SHOULD end for this level.
+          const scheduledRestEnd = new Date(currentQuizStartTime.getTime() + quizDuration + restDuration);
+
+          if (now < scheduledRestEnd) {
+            // Still in the calculated rest period
+            updates[`restEndTimes.${level}`] = scheduledRestEnd;
+            updates[`quizStartTimes.${level}`] = null;
+          } else {
+            // Rest period also expired — allow starting a new session immediately
+            updates[`quizStartTimes.${level}`] = now;
+            updates[`levelSessionWrongAnswers.${level}`] = 0;
+            updates[`restEndTimes.${level}`] = null;
+          }
         }
-        // If time hasn't expired yet, keep the existing session (do nothing)
       }
     }
 
@@ -83,38 +101,42 @@ export class UsersService {
     if (!user) return null;
 
     const now = new Date();
+    const restEndTimes = user.restEndTimes || new Map();
+    const currentRestEndTime = restEndTimes.get(level);
 
-    // Check if in rest period
-    if (user.restEndTime) {
-      if (now < user.restEndTime) {
+    // Check if in rest period for this level
+    if (currentRestEndTime) {
+      if (now < currentRestEndTime) {
         return { user, addedReward: 0, error: 'REST_PERIOD' };
-      } else {
-        // Rest period expired, clear it
-        user.restEndTime = undefined;
       }
     }
 
-    // Initialize quiz start time if not set
-    let quizStartTime = user.quizStartTime;
-    if (!quizStartTime) {
-      quizStartTime = now;
+    // Initialize level-specific quiz start time if not set
+    const quizStartTimes = user.quizStartTimes || new Map();
+    let currentQuizStartTime = quizStartTimes.get(level);
+    if (!currentQuizStartTime) {
+      currentQuizStartTime = now;
     }
 
-    // Check if 20 minutes passed
-    const diffMs = now.getTime() - quizStartTime.getTime();
+    // Check if 20 minutes passed for this level
+    const diffMs = now.getTime() - currentQuizStartTime.getTime();
     const diffMins = diffMs / (1000 * 60);
 
     if (diffMins >= 20) {
-      const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
+      const quizDuration = 20 * 60 * 1000;
+      const restDuration = 60 * 60 * 1000;
+      // Calculate rest end relative to when the quiz SHOULD have ended
+      const restEndTime = new Date(currentQuizStartTime.getTime() + quizDuration + restDuration);
+
       const updatedUser = await this.userModel
         .findByIdAndUpdate(
           userId,
           {
             $set: {
-              restEndTime,
-              quizStartTime: null,
+              [`restEndTimes.${level}`]: restEndTime,
+              [`quizStartTimes.${level}`]: null,
               [`levelProgress.${level}`]: index,
-              sessionWrongAnswers: 0,
+              [`levelSessionWrongAnswers.${level}`]: 0,
             },
           },
           { new: true },
@@ -123,17 +145,20 @@ export class UsersService {
       return { user: updatedUser!, addedReward: 0, error: 'TIME_UP' };
     }
 
-    // Check if chances are already gone (shouldn't happen with correct frontend, but for safety)
-    if (user.sessionWrongAnswers >= 5) {
+    // Check if chances are already gone for this level
+    const levelSessionWrongAnswers = user.levelSessionWrongAnswers || new Map();
+    const currentWrongAnswers = levelSessionWrongAnswers.get(level) || 0;
+
+    if (currentWrongAnswers >= 5) {
       const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
       const updatedUser = await this.userModel
         .findByIdAndUpdate(
           userId,
           {
             $set: {
-              restEndTime,
-              quizStartTime: null,
-              sessionWrongAnswers: 0,
+              [`restEndTimes.${level}`]: restEndTime,
+              [`quizStartTimes.${level}`]: null,
+              [`levelSessionWrongAnswers.${level}`]: 0,
             },
           },
           { new: true },
@@ -145,7 +170,7 @@ export class UsersService {
     const query: any = {
       $inc: { totalAnswered: 1 },
       $set: {
-        quizStartTime,
+        [`quizStartTimes.${level}`]: currentQuizStartTime,
       },
     };
     let addedReward = 0;
@@ -156,20 +181,20 @@ export class UsersService {
         if (!query.$push) query.$push = {};
         query.$push.answeredQuestions = questionId;
         query.$inc.balance = reward;
-        query.$inc.correctAnswers = 1; // Only count unique correct answers
+        query.$inc.correctAnswers = 1;
         addedReward = reward;
       }
     } else {
       query.$inc.wrongAnswers = 1;
 
       // Check if this was the 5th mistake
-      if ((user.sessionWrongAnswers || 0) + 1 >= 5) {
+      if (currentWrongAnswers + 1 >= 5) {
         const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
-        query.$set.restEndTime = restEndTime;
-        query.$set.quizStartTime = null;
-        query.$set.sessionWrongAnswers = 0;
+        query.$set[`restEndTimes.${level}`] = restEndTime;
+        query.$set[`quizStartTimes.${level}`] = null;
+        query.$set[`levelSessionWrongAnswers.${level}`] = 0;
       } else {
-        query.$inc.sessionWrongAnswers = 1;
+        query.$inc[`levelSessionWrongAnswers.${level}`] = 1;
       }
     }
 
@@ -177,8 +202,11 @@ export class UsersService {
       .findByIdAndUpdate(userId, query, { new: true })
       .exec();
 
-    if (updatedUser && updatedUser.restEndTime && !isCorrect) {
-      return { user: updatedUser, addedReward: 0, error: 'OUT_OF_CHANCES' };
+    if (updatedUser) {
+      const updatedRestTimes = updatedUser.restEndTimes || new Map();
+      if (updatedRestTimes.get(level) && !isCorrect) {
+        return { user: updatedUser, addedReward: 0, error: 'OUT_OF_CHANCES' };
+      }
     }
 
     return updatedUser ? { user: updatedUser, addedReward } : null;
@@ -188,9 +216,10 @@ export class UsersService {
     const user = await this.userModel.findById(userId);
     if (!user) return null;
     return {
-      quizStartTime: user.quizStartTime,
-      restEndTime: user.restEndTime,
+      quizStartTimes: user.quizStartTimes,
+      restEndTimes: user.restEndTimes,
       levelProgress: user.levelProgress,
+      levelSessionWrongAnswers: user.levelSessionWrongAnswers,
     };
   }
 

@@ -66,12 +66,21 @@ const Dashboard: React.FC = () => {
     ];
 
     const handleLevelStart = (level: string) => {
+        // Check if user has opted to skip rules for this level in the current session
+        const skipRules = sessionStorage.getItem(`skipRules_${level}`) === 'true';
+        if (skipRules) {
+            navigate(`/quiz/${level}`);
+            return;
+        }
         setSelectedLevel(level);
         setIsRulesModalOpen(true);
     };
 
-    const handleConfirmStart = () => {
+    const handleConfirmStart = (dontShowAgain: boolean) => {
         if (selectedLevel) {
+            if (dontShowAgain) {
+                sessionStorage.setItem(`skipRules_${selectedLevel}`, 'true');
+            }
             navigate(`/quiz/${selectedLevel}`);
         }
         setIsRulesModalOpen(false);

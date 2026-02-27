@@ -41,17 +41,20 @@ export class User extends Document {
   @Prop({ type: [String], default: [] })
   answeredQuestions: string[]; // Store IDs of correctly answered questions
 
-  @Prop()
-  quizStartTime?: Date;
+  @Prop({ type: Map, of: Date, default: {} })
+  quizStartTimes: Map<string, Date>;
 
-  @Prop()
-  restEndTime?: Date;
+  @Prop({ type: Map, of: Date, default: {} })
+  restEndTimes: Map<string, Date>;
+
+  @Prop({ type: Map, of: Number, default: {} })
+  levelSessionWrongAnswers: Map<string, number>;
 
   @Prop({ type: Map, of: Number, default: {} })
   levelProgress: Map<string, number>;
 
   @Prop({ default: 0 })
-  sessionWrongAnswers: number;
+  sessionWrongAnswers: number; // Keep for now if any generic logic relies on it, but we'll prioritize maps
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
