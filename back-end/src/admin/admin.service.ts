@@ -11,7 +11,7 @@ export class AdminService {
     @InjectModel(Question.name) private questionModel: Model<Question>,
     @InjectModel(User.name) private userModel: Model<User>,
     private activityService: ActivityService,
-  ) {}
+  ) { }
 
   async getActivities(page: number = 1, limit: number = 20, search?: string) {
     return this.activityService.getFilteredActivities(page, limit, search);
@@ -22,14 +22,14 @@ export class AdminService {
       role: UserRole.STUDENT,
     });
     const totalQuestions = await this.questionModel.countDocuments();
-    const totalAnswers = await this.userModel.aggregate([
-      { $group: { _id: null, count: { $sum: '$totalAnswered' } } },
+    const totalCorrectAnswers = await this.userModel.aggregate([
+      { $group: { _id: null, count: { $sum: '$correctAnswers' } } },
     ]);
 
     return {
       totalUsers,
       totalQuestions,
-      totalAnswers: totalAnswers[0]?.count || 0,
+      totalCorrectAnswers: totalCorrectAnswers[0]?.count || 0,
     };
   }
 

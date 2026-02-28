@@ -14,7 +14,6 @@ interface Stats {
     totalUsers: number;
     totalQuestions: number;
     totalCorrectAnswers: number;
-    totalAnswers: number;
 }
 
 const AdminDashboard: React.FC = () => {
