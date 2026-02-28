@@ -86,4 +86,9 @@ export class QuestionsController {
   async getStatus(@Request() req: any) {
     return this.usersService.findById(req.user.userId);
   }
+
+  @Get('landing-stats')
+  async getLandingStats() {
+    return this.questionsService.getLandingStats();
+  }
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -15,7 +16,7 @@ import QuestionForm from './pages/admin/QuestionForm';
 import UserManagement from './pages/admin/UserManagement';
 import AdminGuard from './components/AdminGuard';
 
-import { LogOut, User as UserIcon, Award, LayoutDashboard, Trophy, Settings } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings } from 'lucide-react';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -28,11 +29,11 @@ const Navbar: React.FC = () => {
   return (
     <nav className="glass-card" style={{ borderRadius: '0', borderLeft: 'none', borderRight: 'none', borderTop: 'none', padding: '1rem 0', position: 'sticky', top: 0, zIndex: 100 }}>
       <div className="container navbar-inner">
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Award color="white" size={24} />
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.9rem', flexShrink: 0 }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '14px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 5px 15px rgba(0, 0, 0, 0.25)' }}>
+            <img src="/favicon.png" alt="Math-Mathic Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.1)' }} />
           </div>
-          <span className="gradient-text navbar-logo-text" style={{ fontSize: '1.5rem', fontWeight: 800 }}>MATH-MATIK</span>
+          <span className="gradient-text navbar-logo-text" style={{ fontSize: '1.85rem', fontWeight: 900, letterSpacing: '-0.7px' }}>MATHEMATIC</span>
         </Link>
 
         {isAuthenticated ? (
@@ -78,7 +79,7 @@ const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           {/* Main App Routes */}
-          <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Navigate to="/dashboard" /></main></>} />
+          <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Home /></main></>} />
 
           <Route path="/login" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Login /></main></>} />
           <Route path="/register" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Register /></main></>} />

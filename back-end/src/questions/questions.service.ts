@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Question } from './schemas/question.schema';
+import { User, UserRole } from '../users/schemas/user.schema';
 import * as XLSX from 'xlsx';
 
 @Injectable()
 export class QuestionsService {
   constructor(
     @InjectModel(Question.name) private questionModel: Model<Question>,
+    @InjectModel(User.name) private userModel: Model<User>,
   ) { }
 
   async create(data: any): Promise<Question> {
@@ -118,5 +120,22 @@ export class QuestionsService {
       result[item._id] = item.count;
     }
     return result;
+  }
+
+  async getLandingStats() {
+    const totalQuestions = await this.questionModel.countDocuments().exec();
+    const levels = await this.questionModel.distinct('level').exec();
+    const totalStudents = await this.userModel.countDocuments({ role: UserRole.STUDENT }).exec();
+
+    const totalCorrectAnswers = await this.userModel.aggregate([
+      { $group: { _id: null, count: { $sum: '$correctAnswers' } } },
+    ]);
+
+    return {
+      totalQuestions,
+      totalLevels: levels.length,
+      totalStudents,
+      totalCorrectAnswers: totalCorrectAnswers[0]?.count || 0,
+    };
   }
 }
