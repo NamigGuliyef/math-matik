@@ -88,8 +88,8 @@ const Dashboard: React.FC = () => {
 
     const levelDescriptions = [
         'Riyazi toplama və çıxma misalları',
-        'Orta çətinlikli məsələlər.',
-        'Mürəkkəb riyazi problemlər.',
+        'Çatışmayan ədədi tap, ədədləri müqayisə et.',
+        'Sadə vurma əməliyyatları və onların müqayisəsi.',
         'Məntiqi təfəkkür sualları.',
         'Olimpiada səviyyəli tapşırıqlar.',
     ];
