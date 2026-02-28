@@ -171,7 +171,7 @@ const Home: React.FC = () => {
                             <span className="subtitle-v2">Məzmun</span>
                             <h2>Platformamızın <span className="text-gradient-v2">Özəllikləri</span></h2>
                             <p>
-                                Math-Matik sadəcə bir quiz tətbiqi deyil, o təhsil səyahətində sizin ən yaxın köməkçinizdir.
+                                Mathematic sadəcə bir quiz tətbiqi deyil, o təhsil səyahətində sizin ən yaxın köməkçinizdir.
                             </p>
                             <ul className="levels-list-v2">
                                 <li><CheckCircle size={18} color="var(--success)" /> Dinamik artan mürəkkəblik</li>
