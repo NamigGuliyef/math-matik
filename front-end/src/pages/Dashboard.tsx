@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
         'Riyazi toplama və çıxma misalları',
         'Çatışmayan ədədi tap, ədədləri müqayisə et.',
         'Sadə vurma əməliyyatları və onların müqayisəsi.',
-        'Məntiqi təfəkkür sualları.',
+        'Mürəkkəb vurma əməliyyatları və onların müqayisəsi.',
         'Olimpiada səviyyəli tapşırıqlar.',
     ];
 
