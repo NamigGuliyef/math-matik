@@ -1,0 +1,30 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Grid -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid)" />
+
+  <!-- Fibonacci Spiral -->
+  <path d="M 400 300 Q 400 200 500 200 Q 661.8 200 661.8 361.8 Q 661.8 623.6 400 623.6 Q -23.6 623.6 -23.6 300 Q -23.6 -232.4 461.8 -232.4" 
+        stroke="rgba(79, 70, 229, 0.8)" stroke-width="2" fill="none" stroke-dasharray="5 5" />
+
+  <!-- Geometric Shapes -->
+  <circle cx="150" cy="150" r="80" stroke="rgba(139, 92, 246, 0.8)" stroke-width="1.5" fill="none" />
+  <rect x="550" y="100" width="120" height="120" rx="10" stroke="rgba(236, 72, 153, 0.8)" stroke-width="1.5" fill="none" transform="rotate(15 610 160)" />
+  <path d="M 650 450 L 750 550 L 550 550 Z" stroke="rgba(34, 197, 94, 0.6)" stroke-width="1.5" fill="none" />
+  
+  <!-- Mathematical Signs -->
+  <text x="100" y="450" font-family="serif" font-size="60" fill="rgba(255, 255, 255, 0.3)" font-style="italic">π</text>
+  <text x="600" y="400" font-family="serif" font-size="80" fill="rgba(255, 255, 255, 0.3)" font-weight="bold">∑</text>
+  <text x="300" y="100" font-family="serif" font-size="50" fill="rgba(255, 255, 255, 0.3)" font-style="italic">∫</text>
+  <text x="450" y="500" font-family="serif" font-size="70" fill="rgba(255, 255, 255, 0.3)">∞</text>
+
+  <!-- Formula snippets -->
+  <text x="50" y="50" font-family="monospace" font-size="14" fill="rgba(255, 255, 255, 0.5)">e^iπ + 1 = 0</text>
+  <text x="500" y="550" font-family="monospace" font-size="14" fill="rgba(255, 255, 255, 0.5)">a² + b² = c²</text>
+  <text x="50" y="550" font-family="monospace" font-size="14" fill="rgba(255, 255, 255, 0.5)">E = mc²</text>
+  <text x="650" y="50" font-family="monospace" font-size="14" fill="rgba(255, 255, 255, 0.5)">φ = 1.618...</text>
+</svg>

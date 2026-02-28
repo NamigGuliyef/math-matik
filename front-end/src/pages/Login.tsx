@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, ShieldAlert } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { LogIn, ShieldAlert, User, Key, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import './Auth.css';
 
 const Login: React.FC = () => {
     const [name, setName] = useState('');
@@ -32,95 +33,111 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div className="auth-page-wrapper">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card auth-card"
-                style={{ padding: '2.5rem', width: '100%', maxWidth: '450px' }}
+                transition={{ duration: 0.5 }}
+                className="auth-card-v2"
             >
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{ background: 'var(--primary)', width: '60px', height: '60px', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                        <LogIn color="white" size={32} />
+                <div className="auth-header-v2">
+                    <div className="auth-icon-wrap" style={{ background: 'var(--primary)', color: 'white' }}>
+                        <LogIn size={32} />
                     </div>
-                    <h2 className="gradient-text" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Xoş Gəlmisiniz</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Məlumatlarınızı daxil edərək sistemə giriş edin</p>
+                    <h2 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.75rem', fontWeight: 900 }}>Xoş Gəlmisiniz</h2>
+                    <p>Məlumatlarınızı daxil edərək riyaziyyat dünyasına giriş edin</p>
                 </div>
 
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                        <ShieldAlert size={18} />
-                        <span style={{ fontSize: '0.875rem' }}>{error}</span>
-                    </motion.div>
-                )}
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="error-box-v2"
+                        >
+                            <ShieldAlert size={20} />
+                            <span>{error}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="auth-name-row">
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Ad</label>
-                            <input
-                                className="input-field"
-                                type="text"
-                                placeholder="Məsələn: Əli"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                            />
+                    <div className="auth-name-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
+                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
+                            <label className="input-label-v2">Ad</label>
+                            <div className="input-wrapper-v2">
+                                <User className="input-icon-v2" size={18} />
+                                <input
+                                    className="input-v2"
+                                    type="text"
+                                    placeholder="Adınız"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Soyad</label>
-                            <input
-                                className="input-field"
-                                type="text"
-                                placeholder="Məsələn: Əliyev"
-                                value={surname}
-                                onChange={(e) => setSurname(e.target.value)}
-                                required
-                            />
+                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
+                            <label className="input-label-v2">Soyad</label>
+                            <div className="input-wrapper-v2">
+                                <User className="input-icon-v2" size={18} />
+                                <input
+                                    className="input-v2"
+                                    type="text"
+                                    placeholder="Soyadınız"
+                                    value={surname}
+                                    onChange={(e) => setSurname(e.target.value)}
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <div style={{ marginBottom: '1.25rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Atasının Adı</label>
-                        <input
-                            className="input-field"
-                            type="text"
-                            placeholder="Məsələn: Vəli"
-                            value={fatherName}
-                            onChange={(e) => setFatherName(e.target.value)}
-                            required
-                        />
                     </div>
 
-                    <div style={{ marginBottom: '2rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Şifrə</label>
-                        <input
-                            className="input-field"
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
+                    <div className="input-group-v2">
+                        <label className="input-label-v2">Atasının Adı</label>
+                        <div className="input-wrapper-v2">
+                            <User className="input-icon-v2" size={18} />
+                            <input
+                                className="input-v2"
+                                type="text"
+                                placeholder="Ata adınız"
+                                value={fatherName}
+                                onChange={(e) => setFatherName(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="input-group-v2">
+                        <label className="input-label-v2">Şifrə</label>
+                        <div className="input-wrapper-v2">
+                            <Key className="input-icon-v2" size={18} />
+                            <input
+                                className="input-v2"
+                                type="password"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', padding: '1rem' }}
+                        className="btn-auth-v2 btn-primary"
                         disabled={isLoading}
                     >
                         {isLoading ? 'Giriş edilir...' : 'Daxil Ol'}
+                        {!isLoading && <ArrowRight size={20} />}
                     </button>
                 </form>
 
-                <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                <div className="auth-footer-v2">
+                    <p>
                         Hesabınız yoxdur?{' '}
-                        <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+                        <Link to="/register" className="auth-link-v2">
                             Qeydiyyatdan keçin
                         </Link>
                     </p>

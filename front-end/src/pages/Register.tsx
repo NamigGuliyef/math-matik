@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, ShieldAlert } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { UserPlus, ShieldAlert, User, Key, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/client';
+import './Auth.css';
 
 const Register: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -46,108 +47,132 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', padding: '2rem 1rem' }}>
+        <div className="auth-page-wrapper">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="glass-card"
-                style={{ padding: '2.5rem', width: '100%', maxWidth: '500px' }}
+                transition={{ duration: 0.5 }}
+                className="auth-card-v2"
+                style={{ maxWidth: '550px' }}
             >
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{ background: 'var(--secondary)', width: '60px', height: '60px', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                        <UserPlus color="white" size={32} />
+                <div className="auth-header-v2">
+                    <div className="auth-icon-wrap" style={{ background: 'var(--secondary)', color: 'white' }}>
+                        <UserPlus size={32} />
                     </div>
-                    <h2 className="gradient-text" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Yeni Hesab</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Math-Matik dünyasına xoş gəlmisiniz!</p>
+                    <h2 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.75rem', fontWeight: 900 }}>Yeni Hesab</h2>
+                    <p>Math-Matik dünyasına xoş gəlmisiniz!</p>
                 </div>
 
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                        <ShieldAlert size={18} />
-                        <span style={{ fontSize: '0.875rem' }}>{error}</span>
-                    </motion.div>
-                )}
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="error-box-v2"
+                        >
+                            <ShieldAlert size={20} />
+                            <span>{error}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Ad</label>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
+                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
+                            <label className="input-label-v2">Ad</label>
+                            <div className="input-wrapper-v2">
+                                <User className="input-icon-v2" size={18} />
+                                <input
+                                    name="name"
+                                    className="input-v2"
+                                    type="text"
+                                    placeholder="Adınız"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
+                            <label className="input-label-v2">Soyad</label>
+                            <div className="input-wrapper-v2">
+                                <User className="input-icon-v2" size={18} />
+                                <input
+                                    name="surname"
+                                    className="input-v2"
+                                    type="text"
+                                    placeholder="Soyadınız"
+                                    value={formData.surname}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="input-group-v2">
+                        <label className="input-label-v2">Atasının Adı</label>
+                        <div className="input-wrapper-v2">
+                            <User className="input-icon-v2" size={18} />
                             <input
-                                name="name"
-                                className="input-field"
+                                name="fatherName"
+                                className="input-v2"
                                 type="text"
-                                value={formData.name}
+                                placeholder="Ata adınız"
+                                value={formData.fatherName}
                                 onChange={handleChange}
                                 required
                             />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Soyad</label>
+                    </div>
+
+                    <div className="input-group-v2">
+                        <label className="input-label-v2">Şifrə</label>
+                        <div className="input-wrapper-v2">
+                            <Key className="input-icon-v2" size={18} />
                             <input
-                                name="surname"
-                                className="input-field"
-                                type="text"
-                                value={formData.surname}
+                                name="password"
+                                className="input-v2"
+                                type="password"
+                                placeholder="••••••••"
+                                value={formData.password}
                                 onChange={handleChange}
                                 required
                             />
                         </div>
                     </div>
 
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Atasının Adı</label>
-                        <input
-                            name="fatherName"
-                            className="input-field"
-                            type="text"
-                            value={formData.fatherName}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Şifrə</label>
-                        <input
-                            name="password"
-                            className="input-field"
-                            type="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: '2rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Şifrəni Təsdiqlə</label>
-                        <input
-                            name="confirmPassword"
-                            className="input-field"
-                            type="password"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            required
-                        />
+                    <div className="input-group-v2">
+                        <label className="input-label-v2">Şifrəni Təsdiqlə</label>
+                        <div className="input-wrapper-v2">
+                            <Key className="input-icon-v2" size={18} />
+                            <input
+                                name="confirmPassword"
+                                className="input-v2"
+                                type="password"
+                                placeholder="••••••••"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        className="btn btn-secondary"
-                        style={{ width: '100%', padding: '1rem' }}
+                        className="btn-auth-v2 btn-secondary"
                         disabled={isLoading}
                     >
                         {isLoading ? 'Qeydiyyat aparılır...' : 'Qeydiyyatı Tamamla'}
+                        {!isLoading && <ArrowRight size={20} />}
                     </button>
                 </form>
 
-                <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                <div className="auth-footer-v2">
+                    <p>
                         Artıq hesabınız var?{' '}
-                        <Link to="/login" style={{ color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none' }}>
+                        <Link to="/login" className="auth-link-v2" style={{ color: 'var(--secondary)' }}>
                             Daxil olun
                         </Link>
                     </p>
