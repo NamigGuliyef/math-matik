@@ -13,6 +13,7 @@ interface Activity {
 interface Stats {
     totalUsers: number;
     totalQuestions: number;
+    totalCorrectAnswers: number;
     totalAnswers: number;
 }
 
@@ -72,7 +73,7 @@ const AdminDashboard: React.FC = () => {
     const statCards = [
         { title: 'Ümumi İstifadəçilər', value: stats?.totalUsers, icon: <Users size={24} color="var(--primary)" />, color: 'var(--primary)' },
         { title: 'Ümumi Suallar', value: stats?.totalQuestions, icon: <BookOpen size={24} color="var(--secondary)" />, color: 'var(--secondary)' },
-        { title: 'Ümumi Cavablar', value: stats?.totalAnswers, icon: <CheckCircle size={24} color="var(--success)" />, color: 'var(--success)' },
+        { title: 'Ümumi Cavablar', value: stats?.totalCorrectAnswers, icon: <CheckCircle size={24} color="var(--success)" />, color: 'var(--success)' },
         { title: 'Aktivlik', value: '87%', icon: <TrendingUp size={24} color="var(--warning)" />, color: 'var(--warning)' },
     ];
 

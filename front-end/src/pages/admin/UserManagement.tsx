@@ -8,6 +8,7 @@ interface User {
     surname: string;
     balance: number;
     level: string;
+    correctAnswers: number;
     totalAnswered: number;
     createdAt: string;
 }
@@ -66,7 +67,7 @@ const UserManagement: React.FC = () => {
                             </div>
                             <div>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Suallar</p>
-                                <p style={{ margin: 0, fontWeight: 700 }}>{user.totalAnswered}</p>
+                                <p style={{ margin: 0, fontWeight: 700 }}>{user.correctAnswers}</p>
                             </div>
                         </div>
                     </div>
