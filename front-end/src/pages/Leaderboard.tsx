@@ -30,22 +30,22 @@ const Leaderboard: React.FC = () => {
     }
 
     return (
-        <div className="container" style={{ maxWidth: '800px' }}>
+        <div className="container" style={{ maxWidth: '800px', padding: '0 1rem' }}>
             <header style={{ textAlign: 'center', marginBottom: '4rem' }}>
                 <Crown size={60} color="var(--warning)" style={{ marginBottom: '1rem' }} />
-                <h1 className="gradient-text" style={{ fontSize: '3rem' }}>Liderlər Lövhəsi</h1>
+                <h1 className="gradient-text" style={{ fontSize: 'clamp(2rem, 6vw, 3rem)' }}>Liderlər Lövhəsi</h1>
                 <p style={{ color: 'var(--text-muted)' }}>Ən yüksək nəticə göstərən şagirdlərimiz</p>
             </header>
 
-            <div className="glass-card" style={{ padding: '1rem', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <div className="glass-card" style={{ padding: '0.5rem', overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                            <th style={{ padding: '1.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Sıra</th>
-                            <th style={{ padding: '1.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Şagird</th>
-                            <th style={{ padding: '1.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Səviyyə</th>
-                            <th style={{ padding: '1.5rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>Düzgün</th>
-                            <th style={{ padding: '1.5rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>AZN</th>
+                            <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sıra</th>
+                            <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Şagird</th>
+                            <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Səviyyə</th>
+                            <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Düzgün</th>
+                            <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>AZN</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -57,7 +57,7 @@ const Leaderboard: React.FC = () => {
                                 transition={{ delay: index * 0.05 }}
                                 style={{ borderBottom: index === leaders.length - 1 ? 'none' : '1px solid var(--border)' }}
                             >
-                                <td style={{ padding: '1.5rem' }}>
+                                <td style={{ padding: '1rem 0.75rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
                                         {index < 3 ? (
                                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -94,14 +94,14 @@ const Leaderboard: React.FC = () => {
                                         )}
                                     </div>
                                 </td>
-                                <td style={{ padding: '1.5rem', fontWeight: 600 }}>{student.name} {student.surname} ({student.fatherName})</td>
-                                <td style={{ padding: '1.5rem' }}>
-                                    <span style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 700 }}>
+                                <td style={{ padding: '1rem 0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>{student.name} {student.surname} ({student.fatherName})</td>
+                                <td style={{ padding: '1rem 0.75rem' }}>
+                                    <span style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.6rem', borderRadius: '1rem', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                         {student.level.toUpperCase()}
                                     </span>
                                 </td>
-                                <td style={{ padding: '1.5rem', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{student.correctAnswers}</td>
-                                <td style={{ padding: '1.5rem', textAlign: 'right', fontWeight: 800 }}>{Number(student.balance).toFixed(3)}</td>
+                                <td style={{ padding: '1rem 0.75rem', textAlign: 'right', fontWeight: 700, color: 'var(--success)', whiteSpace: 'nowrap' }}>{student.correctAnswers}</td>
+                                <td style={{ padding: '1rem 0.75rem', textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{Number(student.balance).toFixed(3)}</td>
                             </motion.tr>
                         ))}
                     </tbody>

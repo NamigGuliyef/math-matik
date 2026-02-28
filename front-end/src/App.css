@@ -1,42 +1,232 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Navbar Styles */
+.navbar-v2 {
+  border-radius: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  padding: 0.75rem 0 !important;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-image: url("/assets/math_pattern.svg");
+  background-size: 800px;
+  background-position: center;
+  background-repeat: repeat;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(15px);
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.navbar-brand-v2 {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-shrink: 0;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.navbar-logo-wrap-v2 {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-logo-img-v2 {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transform: scale(1.1);
+  display: block;
+}
+
+.navbar-logo-text-v2 {
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.7px;
+}
+
+.navbar-links-v2 {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.navbar-admin-btn-v2 {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  background-color: rgba(79, 70, 229, 0.1);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  transition: all 0.3s ease;
+}
+
+.navbar-admin-btn-v2:hover {
+  background-color: rgba(79, 70, 229, 0.2);
+  transform: translateY(-1px);
+}
+
+.nav-link-v2-main {
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all 0.3s ease;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+}
+
+.nav-link-v2-main:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.navbar-user-pill-v2 {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.5rem 1.25rem;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navbar-username-v2 {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: white;
+}
+
+.navbar-logout-btn-v2 {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  margin-left: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.navbar-logout-btn-v2:hover {
+  background-color: var(--error) !important;
+}
+
+.navbar-auth-group-v2 {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.navbar-login-btn-v2 {
+  padding: 0.6rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  border-radius: 12px !important;
+  border: 2px solid rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(5px);
+  color: white !important;
+  font-weight: 700 !important;
+}
+
+.navbar-register-btn-v2 {
+  padding: 0.7rem 1.6rem !important;
+  font-size: 0.95rem !important;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4) !important;
+}
+
+/* Navbar Responsiveness */
+@media (max-width: 1024px) {
+  .navbar-logo-text-v2 {
+    font-size: 1.5rem;
   }
-  to {
-    transform: rotate(360deg);
+
+  .navbar-links-v2 {
+    gap: 1rem;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@media (max-width: 768px) {
+  .container.navbar-inner {
+    padding: 0 1rem;
+    width: 100%;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  .navbar-v2 {
+    padding: 0.6rem 0 !important;
+    overflow: hidden;
+  }
+
+  .navbar-logo-wrap-v2 {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+  }
+
+  .navbar-logo-text-v2 {
+    font-size: 1.25rem;
+  }
+
+  .navbar-username-v2 {
+    display: none;
+  }
+
+  .navbar-user-pill-v2 {
+    padding: 0.4rem 0.8rem;
+    gap: 0.4rem;
+  }
+
+  .navbar-link-text-v2 {
+    display: none;
+  }
+
+  .nav-link-v2-main {
+    padding: 0.5rem;
   }
 }
 
-.card {
-  padding: 2em;
-}
+@media (max-width: 480px) {
+  .navbar-logo-text-v2 {
+    display: none;
+  }
 
-.read-the-docs {
-  color: #888;
+  .navbar-brand-v2 {
+    gap: 0;
+  }
+
+  .navbar-auth-group-v2 {
+    gap: 0.5rem;
+  }
+
+  .navbar-login-btn-v2,
+  .navbar-register-btn-v2 {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
 }
