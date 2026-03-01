@@ -98,37 +98,29 @@ const Home: React.FC = () => {
             {/* STATS STRIP */}
             <section className="stats-strip">
                 <div className="container">
-                    <div className="stats-inner-v2 glass-card">
-                        <div className="stat-box-v2">
+                    <div className="section-title-v2" style={{ marginBottom: '1.5rem' }}>
+                        <h2>Statistika</h2>
+                    </div>
+                    <div className="stats-cards-grid">
+                        <div className="stat-mini-card glass-card">
                             <div className="stat-icon-v2 icon-purple"><Users /></div>
-                            <div className="stat-data">
-                                <h3>{loading ? '...' : stats?.totalStudents || 0}</h3>
-                                <span>Aktiv Şagird</span>
-                            </div>
+                            <h3>{loading ? '...' : stats?.totalStudents || 0}</h3>
+                            <span>Aktiv Şagird</span>
                         </div>
-                        <div className="stat-sep"></div>
-                        <div className="stat-box-v2">
+                        <div className="stat-mini-card glass-card">
                             <div className="stat-icon-v2 icon-blue"><BookOpen /></div>
-                            <div className="stat-data">
-                                <h3>{loading ? '...' : stats?.totalQuestions || 0}</h3>
-                                <span>Ümumi Sual</span>
-                            </div>
+                            <h3>{loading ? '...' : stats?.totalQuestions || 0}</h3>
+                            <span>Ümumi Sual</span>
                         </div>
-                        <div className="stat-sep"></div>
-                        <div className="stat-box-v2">
+                        <div className="stat-mini-card glass-card">
                             <div className="stat-icon-v2 icon-green"><CheckCircle /></div>
-                            <div className="stat-data">
-                                <h3>{loading ? '...' : stats?.totalCorrectAnswers || 0}</h3>
-                                <span>Düzgün Cavab</span>
-                            </div>
+                            <h3>{loading ? '...' : stats?.totalCorrectAnswers || 0}</h3>
+                            <span>Düzgün Cavab</span>
                         </div>
-                        <div className="stat-sep"></div>
-                        <div className="stat-box-v2">
+                        <div className="stat-mini-card glass-card">
                             <div className="stat-icon-v2 icon-orange"><Zap /></div>
-                            <div className="stat-data">
-                                <h3>{loading ? '...' : stats?.totalLevels || 0}</h3>
-                                <span>Mərhələ</span>
-                            </div>
+                            <h3>{loading ? '...' : stats?.totalLevels || 0}</h3>
+                            <span>Mərhələ</span>
                         </div>
                     </div>
                 </div>
@@ -138,7 +130,6 @@ const Home: React.FC = () => {
             <section className="how-it-works">
                 <div className="container">
                     <div className="section-title-v2">
-                        <span className="subtitle-v2">Bələdçi</span>
                         <h2>4 Addımda Uğura Doğru</h2>
                         <p>Platformadan istifadə etmək və öyrənməyə başlamaq çox sadədir.</p>
                     </div>
@@ -168,7 +159,6 @@ const Home: React.FC = () => {
                 <div className="container">
                     <div className="levels-flex">
                         <div className="levels-info">
-                            <span className="subtitle-v2">Məzmun</span>
                             <h2>Platformamızın <span className="text-gradient-v2">Özəllikləri</span></h2>
                             <p>
                                 Mathematic sadəcə bir quiz tətbiqi deyil, o təhsil səyahətində sizin ən yaxın köməkçinizdir.
@@ -193,7 +183,7 @@ const Home: React.FC = () => {
                                 ))}
                                 <div className="level-mini-card glass-card infinite-badge">
                                     <TrendingUp size={24} color="var(--primary)" />
-                                    <span>Və daha çox sürprizlər...</span>
+                                    <span>Və daha çox funksiyalar...</span>
                                 </div>
                             </div>
                         </div>
