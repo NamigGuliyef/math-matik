@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
         'Sadə vurma əməliyyatları və onların müqayisəsi.',
         'Mürəkkəb vurma əməliyyatları və onların müqayisəsi.',
         'Ardıcıllığı tamamla, ən böyük və ya ən kiçik ifadəni tap.',
-        'Mürəkkəb ardıcıllıqlar, bölmə əməliyyatları və məntiq məsələləri.',
+        'Sadə və məntiqli məsələlər',
     ];
 
     const levelColors = ['#4f46e5', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
