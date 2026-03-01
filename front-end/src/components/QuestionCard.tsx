@@ -65,7 +65,8 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer }) => {
                         fontWeight: 500,
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        color: 'white'
                     };
 
                     if (isAnswered) {

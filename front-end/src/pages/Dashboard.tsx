@@ -6,7 +6,7 @@ import api from '../api/client';
 import RulesModal from '../components/RulesModal';
 import { useNavigate } from 'react-router-dom';
 
-const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5'];
+const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
 
 const Dashboard: React.FC = () => {
     const { user, updateUser } = useAuth();
@@ -91,10 +91,11 @@ const Dashboard: React.FC = () => {
         'Çatışmayan ədədi tap, ədədləri müqayisə et.',
         'Sadə vurma əməliyyatları və onların müqayisəsi.',
         'Mürəkkəb vurma əməliyyatları və onların müqayisəsi.',
-        'Olimpiada səviyyəli tapşırıqlar.',
+        'Ardıcıllığı tamamla, ən böyük və ya ən kiçik ifadəni tap.',
+        'Mürəkkəb ardıcıllıqlar, bölmə əməliyyatları və məntiq məsələləri.',
     ];
 
-    const levelColors = ['#4f46e5', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+    const levelColors = ['#4f46e5', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
 
     return (
         <div className="container">

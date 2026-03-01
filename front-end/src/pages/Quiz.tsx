@@ -6,7 +6,7 @@ import QuestionCard from '../components/QuestionCard';
 import { Loader2, Trophy, ArrowLeft, Timer, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5'];
+const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
 
 
 const Quiz: React.FC = () => {
