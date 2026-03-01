@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
         'Sadə vurma əməliyyatları və onların müqayisəsi.',
         'Mürəkkəb vurma əməliyyatları və onların müqayisəsi.',
         'Ardıcıllığı tamamla, ən böyük və ya ən kiçik ifadəni tap.',
-        'Sadə və məntiqli məsələlər',
+        'Sadə, mürəkkəb və məntiqli məsələlər',
     ];
 
     const levelColors = ['#4f46e5', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
@@ -155,6 +155,8 @@ const Dashboard: React.FC = () => {
                                     opacity: isAvailable ? (accessible ? 1 : 0.65) : 0.7,
                                     cursor: accessible ? 'pointer' : 'not-allowed',
                                     filter: accessible ? 'none' : 'grayscale(0.5)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
                                 }}
                             >
                                 {/* Lock icon for student-locked levels */}
@@ -204,8 +206,8 @@ const Dashboard: React.FC = () => {
                                     <h3 style={{ color: 'white', fontSize: '1.5rem' }}>{level.toUpperCase()}</h3>
                                 </div>
 
-                                <div style={{ padding: '1.5rem' }}>
-                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', flex: 1 }}>
                                         {levelDescriptions[index]}
                                     </p>
 
