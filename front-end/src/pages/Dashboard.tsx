@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, TrendingUp, AlertCircle, PlayCircle, Star, Lock, CheckCircle, Zap, Shield, Sword } from 'lucide-react';
+import { Trophy, AlertCircle, PlayCircle, Star, Lock, CheckCircle, Zap, Shield, Sword } from 'lucide-react';
 import api from '../api/client';
 import RulesModal from '../components/RulesModal';
 import { useNavigate } from 'react-router-dom';
@@ -174,7 +174,7 @@ const Dashboard: React.FC = () => {
     };
     const currentLevelIndex = LEVELS.findIndex((l, i) => isLevelAccessible(l, i) && !isLevelCompleted(l));
 
-    const completedCount = LEVELS.filter((l, i) => isLevelCompleted(l)).length;
+    const completedCount = LEVELS.filter((l) => isLevelCompleted(l)).length;
     const overallPct = Math.round((completedCount / LEVELS.length) * 100);
 
     const handleLevelStart = (level: string) => {
