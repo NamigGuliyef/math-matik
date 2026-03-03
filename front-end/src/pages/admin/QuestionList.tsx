@@ -3,6 +3,7 @@ import api from '../../api/client';
 import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight, FileUp, CheckCircle, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNotification } from '../../context/NotificationContext';
 
 interface Question {
     _id: string;
@@ -102,7 +103,7 @@ const QuestionList: React.FC = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalQuestions, setTotalQuestions] = useState(0);
     const [importCount, setImportCount] = useState<number | null>(null);
-
+    const { showNotification } = useNotification();
     const LIMIT = 20;
 
     useEffect(() => {
@@ -134,7 +135,7 @@ const QuestionList: React.FC = () => {
             // Refresh current page
             fetchQuestions(page);
         } catch (error) {
-            alert('Sualı silmək mümkün olmadı.');
+            showNotification('Sualı silmək mümkün olmadı.', 'error');
         }
     };
 
@@ -156,7 +157,7 @@ const QuestionList: React.FC = () => {
             fetchQuestions(1);
         } catch (error) {
             console.error('Error uploading file:', error);
-            alert('Fayl yüklənərkən xəta baş verdi.');
+            showNotification('Fayl yüklənərkən xəta baş verdi.', 'error');
         } finally {
             setLoading(false);
             // Reset input

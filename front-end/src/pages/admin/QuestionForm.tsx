@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/client';
 import { ChevronLeft, Save } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
+import { useState, useEffect } from 'react';
 
 const QuestionForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showNotification } = useNotification();
     const isEdit = !!id;
 
     const [formData, setFormData] = useState({
@@ -65,8 +67,9 @@ const QuestionForm: React.FC = () => {
                 await api.post('/admin/questions', formData);
             }
             navigate('/admin/questions');
+            showNotification(isEdit ? 'Sual yeniləndi' : 'Yeni sual yaradıldı', 'success');
         } catch (error) {
-            alert('Xəta baş verdi. Zəhmət olmasa yenidən yoxlayın.');
+            showNotification('Xəta baş verdi. Zəhmət olmasa yenidən yoxlayın.', 'error');
         } finally {
             setSaving(false);
         }

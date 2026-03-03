@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Quiz from './pages/Quiz';
 import Leaderboard from './pages/Leaderboard';
+import Fighter from './pages/Fighter';
 
 // Admin Pages
 import AdminLayout from './components/layouts/AdminLayout';
@@ -14,9 +15,10 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import QuestionList from './pages/admin/QuestionList';
 import QuestionForm from './pages/admin/QuestionForm';
 import UserManagement from './pages/admin/UserManagement';
+import AdminFighter from './pages/admin/AdminFighter';
 import AdminGuard from './components/AdminGuard';
 
-import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings, Shield } from 'lucide-react';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -46,6 +48,9 @@ const Navbar: React.FC = () => {
             )}
             <Link to="/dashboard" className="nav-link-v2-main">
               <LayoutDashboard size={20} color="var(--primary)" /><span className="navbar-link-text-v2">Panel</span>
+            </Link>
+            <Link to="/fighter" className="nav-link-v2-main">
+              <Shield size={20} color="var(--secondary)" /><span className="navbar-link-text-v2">Döyüşçüm</span>
             </Link>
             <Link to="/leaderboard" className="nav-link-v2-main">
               <Trophy size={20} color="var(--warning)" /><span className="navbar-link-text-v2">Reytinq</span>
@@ -84,60 +89,66 @@ const Navbar: React.FC = () => {
 };
 
 
+import { NotificationProvider } from './context/NotificationContext';
+
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Main App Routes */}
-          <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Home /></main></>} />
+    <NotificationProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Main App Routes */}
+            <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Home /></main></>} />
 
-          <Route path="/login" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Login /></main></>} />
-          <Route path="/register" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Register /></main></>} />
+            <Route path="/login" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Login /></main></>} />
+            <Route path="/register" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Register /></main></>} />
 
-          <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
-          <Route path="/quiz/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
-          <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
+            <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
+            <Route path="/fighter" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Fighter /></ProtectedRoute></main></>} />
+            <Route path="/quiz/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
+            <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="questions" element={<QuestionList />} />
-            <Route path="questions/new" element={<QuestionForm />} />
-            <Route path="questions/edit/:id" element={<QuestionForm />} />
-            <Route path="users" element={<UserManagement />} />
-          </Route>
-        </Routes>
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="questions" element={<QuestionList />} />
+              <Route path="questions/new" element={<QuestionForm />} />
+              <Route path="questions/edit/:id" element={<QuestionForm />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="fighter" element={<AdminFighter />} />
+            </Route>
+          </Routes>
 
-        <footer className="footer" style={{
-          padding: '2.5rem 0',
-          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          marginTop: 'auto'
-        }}>
-          <div className="container" style={{ textAlign: 'center' }}>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: '1.1rem',
-              lineHeight: '1.6',
-              maxWidth: '800px',
-              margin: '0 auto',
-              fontWeight: 500
-            }}>
-              &copy; {new Date().getFullYear()} Mathematic Quiz Platforması. Bütün hüquqlar qorunur.<br />
-              <span className="gradient-text" style={{
-                fontWeight: 800,
-                fontSize: '1.2rem',
-                display: 'inline-block',
-                marginTop: '0.5rem'
+          <footer className="footer" style={{
+            padding: '2.5rem 0',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            marginTop: 'auto'
+          }}>
+            <div className="container" style={{ textAlign: 'center' }}>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '1.1rem',
+                lineHeight: '1.6',
+                maxWidth: '800px',
+                margin: '0 auto',
+                fontWeight: 500
               }}>
-                Riyaziyyatı bizimlə öyrənin və zirvələrə yüksəlin!
-              </span>
-            </p>
-          </div>
-        </footer>
-      </BrowserRouter>
-    </AuthProvider>
+                &copy; {new Date().getFullYear()} Mathematic Quiz Platforması. Bütün hüquqlar qorunur.<br />
+                <span className="gradient-text" style={{
+                  fontWeight: 800,
+                  fontSize: '1.2rem',
+                  display: 'inline-block',
+                  marginTop: '0.5rem'
+                }}>
+                  Riyaziyyatı bizimlə öyrənin və zirvələrə yüksəlin!
+                </span>
+              </p>
+            </div>
+          </footer>
+        </BrowserRouter>
+      </AuthProvider>
+    </NotificationProvider>
   );
 };
 

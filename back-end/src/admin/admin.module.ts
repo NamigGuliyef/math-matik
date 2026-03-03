@@ -21,4 +21,4 @@ import { UsersModule } from '../users/users.module';
   providers: [AdminService],
   exports: [AdminService],
 })
-export class AdminModule {}
+export class AdminModule { }
