@@ -129,7 +129,7 @@ const Fighter: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="fighter-container">Yüklənir...</div>;
+    if (loading) return <div className="fighter-container"></div>;
 
     return (
         <div className="fighter-container">
