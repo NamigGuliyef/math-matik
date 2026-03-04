@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 export enum ItemCategory {
-    HELMET = 'şlem',
+    HELMET = 'dəbilqə',
     ARMOR = 'zireh',
     WEAPON = 'silah',
     SHIELD = 'qalxan',
@@ -28,6 +28,9 @@ export class FighterItem extends Document {
 
     @Prop()
     image?: string;
+
+    @Prop({ type: Object, default: {} })
+    attributes: Record<string, number>;
 }
 
 export const FighterItemSchema = SchemaFactory.createForClass(FighterItem);

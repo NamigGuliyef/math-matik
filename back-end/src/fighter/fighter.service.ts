@@ -150,6 +150,19 @@ export class FighterService {
         } else if (inventoryRecord.itemId) {
             const itemToEquip = inventoryRecord.itemId as unknown as FighterItem;
 
+            const categoryNormalize: Record<string, string> = {
+                'helmet': 'dəbilqə', 'HELMET': 'dəbilqə', 'şlem': 'dəbilqə',
+                'armor': 'zireh', 'ARMOR': 'zireh',
+                'weapon': 'silah', 'WEAPON': 'silah',
+                'shield': 'qalxan', 'SHIELD': 'qalxan',
+                'boots': 'çəkmə', 'BOOTS': 'çəkmə',
+                'necklace': 'boyunbağı', 'NECKLACE': 'boyunbağı',
+                'pants': 'şalvar', 'PANTS': 'şalvar',
+                'gloves': 'əlcək', 'GLOVES': 'əlcək',
+            };
+
+            const normCat = categoryNormalize[itemToEquip.category] || itemToEquip.category;
+
             const userInventory = await this.inventoryModel
                 .find({ userId: userIdObj, isEquipped: true, itemId: { $exists: true } })
                 .populate('itemId')
@@ -157,7 +170,11 @@ export class FighterService {
 
             for (const record of userInventory) {
                 const equippedItem = record.itemId as unknown as FighterItem;
-                if (equippedItem.category === itemToEquip.category) {
+                if (!equippedItem) continue;
+
+                const equippedNormCat = categoryNormalize[equippedItem.category] || equippedItem.category;
+
+                if (equippedNormCat === normCat) {
                     record.isEquipped = false;
                     await record.save();
                 }

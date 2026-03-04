@@ -4,7 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import {
     Sword, Shield, HardHat, Footprints,
     Shirt, User as UserIcon, ShoppingBag,
-    Coins, X, Award, Flame, Zap
+    Coins, X, Award, Flame, Zap,
+    HandMetal,
+    Hand
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import './Fighter.css';
@@ -16,6 +18,7 @@ interface FighterItem {
     level: number;
     price: number;
     image?: string;
+    attributes?: Record<string, number>;
 }
 
 interface Character {
@@ -33,7 +36,8 @@ interface InventoryRecord {
     isEquipped: boolean;
 }
 
-const API_BASE = 'http://localhost:8002';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+const API_BASE_CLEAN = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
 
 const getLevelColor = (level: number) => {
     if (level === 2) return 'lvl-2';
@@ -46,7 +50,7 @@ const Fighter: React.FC = () => {
     const { showNotification } = useNotification();
     const [activeTab, setActiveTab] = useState<'fighter' | 'shop'>('fighter');
     const [equipped, setEquipped] = useState<Record<string, InventoryRecord | null>>({
-        'şlem': null,
+        'dəbilqə': null,
         'zireh': null,
         'silah': null,
         'qalxan': null,
@@ -62,6 +66,58 @@ const Fighter: React.FC = () => {
     const [balance, setBalance] = useState<number>(user?.balance || 0);
     const [loading, setLoading] = useState(true);
 
+    const allStatLabels: Record<string, string> = {
+        can: 'HP',
+        mudafie: 'Zireh',
+        kritik_yayinma: 'K.Yayınma',
+        dozumuluk: 'Dözümlülük',
+        zerbe_gucu: 'Zərbə',
+        zireh_delme: 'Z.Dəlmə',
+        kritik_sans: 'Kritik %',
+        bloklama_gucu: 'Blok',
+        sehirli_muqavimet: 'S.Müqavimət',
+        suret: 'Sürət',
+        qacinma_sansi: 'Qaçınma %',
+        enerji: 'Mana',
+        can_yenilenme: 'Yenilənmə',
+        passiv_guc: 'Passiv',
+        elementar_muqavimet: 'E.Müqavimət',
+        deqiqlik: 'Dəqiqlik',
+        elave_zerbe: 'Bonus'
+    };
+
+    const statGroups = [
+        {
+            title: 'Hücum',
+            icon: <Sword size={16} color="#ef4444" />,
+            stats: ['zerbe_gucu', 'zireh_delme', 'kritik_sans', 'deqiqlik', 'elave_zerbe']
+        },
+        {
+            title: 'Müdafiə',
+            icon: <Shield size={16} color="#3b82f6" />,
+            stats: ['can', 'mudafie', 'kritik_yayinma', 'dozumuluk', 'bloklama_gucu', 'sehirli_muqavimet', 'elementar_muqavimet', 'qacinma_sansi']
+        },
+        {
+            title: 'Mistik',
+            icon: <Zap size={16} color="#fbbf24" />,
+            stats: ['suret', 'enerji', 'can_yenilenme', 'passiv_guc']
+        }
+    ];
+
+    const calculateTotalStats = () => {
+        const stats: Record<string, number> = {};
+        Object.values(equipped).forEach(record => {
+            if (record?.itemId?.attributes) {
+                Object.entries(record.itemId.attributes).forEach(([key, value]) => {
+                    stats[key] = (stats[key] || 0) + Number(value);
+                });
+            }
+        });
+        return stats;
+    };
+
+    const totalStats = calculateTotalStats();
+
     useEffect(() => {
         fetchFighterData();
         fetchShopData();
@@ -69,27 +125,52 @@ const Fighter: React.FC = () => {
 
     const fetchFighterData = async () => {
         try {
-            const resp = await axios.get(`${API_BASE}/fighter`, {
+            const resp = await axios.get(`${API_BASE_CLEAN}/fighter`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const { equipped: equippedList, bag: bagList } = resp.data;
 
+            const categoryNormalize: Record<string, string> = {
+                'helmet': 'dəbilqə', 'HELMET': 'dəbilqə', 'şlem': 'dəbilqə',
+                'armor': 'zireh', 'ARMOR': 'zireh',
+                'weapon': 'silah', 'WEAPON': 'silah',
+                'shield': 'qalxan', 'SHIELD': 'qalxan',
+                'boots': 'çəkmə', 'BOOTS': 'çəkmə',
+                'necklace': 'boyunbağı', 'NECKLACE': 'boyunbağı',
+                'pants': 'şalvar', 'PANTS': 'şalvar',
+                'gloves': 'əlcək', 'GLOVES': 'əlcək',
+            };
+
             const equippedMap: Record<string, InventoryRecord | null> = {
-                'şlem': null, 'zireh': null, 'silah': null, 'qalxan': null,
+                'dəbilqə': null, 'zireh': null, 'silah': null, 'qalxan': null,
                 'çəkmə': null, 'boyunbağı': null, 'şalvar': null, 'əlcək': null,
                 'character': null,
             };
 
             equippedList.forEach((record: InventoryRecord) => {
                 if (record.itemId) {
-                    equippedMap[record.itemId.category] = record;
+                    const cat = categoryNormalize[record.itemId.category] || record.itemId.category;
+                    equippedMap[cat] = record;
                 } else if (record.characterId) {
                     equippedMap['character'] = record;
                 }
             });
 
+            const normalizedBag = bagList.map((record: InventoryRecord) => {
+                if (record.itemId) {
+                    return {
+                        ...record,
+                        itemId: {
+                            ...record.itemId,
+                            category: categoryNormalize[record.itemId.category] || record.itemId.category
+                        }
+                    };
+                }
+                return record;
+            });
+
             setEquipped(equippedMap);
-            setBag(bagList);
+            setBag(normalizedBag);
             setLoading(false);
         } catch (err) {
             console.error('Error fetching fighter:', err);
@@ -99,7 +180,7 @@ const Fighter: React.FC = () => {
 
     const fetchShopData = async () => {
         try {
-            const resp = await axios.get(`${API_BASE}/fighter/shop`, {
+            const resp = await axios.get(`${API_BASE_CLEAN}/fighter/shop`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShopItems(resp.data.items);
@@ -111,7 +192,7 @@ const Fighter: React.FC = () => {
 
     const handlePurchase = async (itemId: string) => {
         try {
-            const response = await axios.post(`${API_BASE}/fighter/purchase/${itemId}`, {}, {
+            const response = await axios.post(`${API_BASE_CLEAN}/fighter/purchase/${itemId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.balance !== undefined) {
@@ -126,7 +207,7 @@ const Fighter: React.FC = () => {
 
     const handlePurchaseChar = async (charId: string) => {
         try {
-            const response = await axios.post(`${API_BASE}/fighter/purchase-char/${charId}`, {}, {
+            const response = await axios.post(`${API_BASE_CLEAN}/fighter/purchase-char/${charId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.balance !== undefined) {
@@ -141,18 +222,22 @@ const Fighter: React.FC = () => {
 
     const handleEquip = async (inventoryId: string) => {
         try {
-            await axios.post(`${API_BASE}/fighter/equip/${inventoryId}`, {}, {
+            console.log('Equipping:', inventoryId);
+            const resp = await axios.post(`${API_BASE_CLEAN}/fighter/equip/${inventoryId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log('Equip response:', resp.data);
             fetchFighterData();
-        } catch (err) {
+            showNotification('Geyinildi!', 'success');
+        } catch (err: any) {
             console.error('Error equipping:', err);
+            showNotification(err.response?.data?.message || 'Geyinmə xətası', 'error');
         }
     };
 
     const handleUnequip = async (inventoryId: string) => {
         try {
-            await axios.post(`${API_BASE}/fighter/unequip/${inventoryId}`, {}, {
+            await axios.post(`${API_BASE_CLEAN}/fighter/unequip/${inventoryId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchFighterData();
@@ -188,12 +273,39 @@ const Fighter: React.FC = () => {
             </div>
 
             {activeTab === 'fighter' ? (
-                <div className="fighter-two-col">
-                    {/* LEFT: Character + Equipment */}
+                <div className="fighter-three-col">
+                    {/* LEFT: Stats Panel */}
+                    <div className="fighter-stats-panel">
+                        <h2 className="stats-title">
+                            <Award size={20} /> Göstəricilər
+                        </h2>
+                        <div className="stats-groups-container">
+                            {statGroups.map((group, gIdx) => (
+                                <div key={gIdx} className="stats-group">
+                                    <h3 className="group-label">
+                                        {group.icon} {group.title}
+                                    </h3>
+                                    <div className="stats-rows">
+                                        {group.stats.map(key => {
+                                            const value = totalStats[key] || 0;
+                                            return (
+                                                <div key={key} className={`stat-row ${value > 0 ? 'active' : ''}`}>
+                                                    <span className="stat-row-label">{allStatLabels[key]}</span>
+                                                    <span className="stat-row-val">{value > 0 ? `+${value}` : '0'}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* CENTER: Character + Equipment */}
                     <div className="fighter-left-col">
                         <div className="fighter-visual-section">
                             <div className="fighter-slots-left">
-                                <Slot item={equipped['şlem']} label="Şlem" category="şlem" onUnequip={handleUnequip} />
+                                <Slot item={equipped['dəbilqə']} label="Dəbilqə" category="dəbilqə" onUnequip={handleUnequip} />
                                 <Slot item={equipped['zireh']} label="Zireh" category="zireh" onUnequip={handleUnequip} />
                                 <Slot item={equipped['silah']} label="Sağ əl" category="silah" onUnequip={handleUnequip} />
                                 <Slot item={equipped['qalxan']} label="Sol əl" category="qalxan" onUnequip={handleUnequip} />
@@ -292,6 +404,15 @@ const Fighter: React.FC = () => {
                                             SƏV {item.level}
                                         </div>
                                         <div className="tooltip-name">{item.name}</div>
+                                        {item.attributes && Object.keys(item.attributes).length > 0 && (
+                                            <div className="tooltip-stats">
+                                                {Object.entries(item.attributes).map(([key, val]) => (
+                                                    <div key={key} className="tooltip-stat">
+                                                        {allStatLabels[key] || key}: +{val}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="item-details-brief">
@@ -352,14 +473,14 @@ const SlotIcon: React.FC<{ category: string; image?: string; size?: number }> = 
         return <img src={image} alt={category} className="slot-image-content" />;
     }
     switch (category) {
-        case 'şlem': return <HardHat size={size} />;
+        case 'dəbilqə': return <HardHat size={size} />;
         case 'zireh': return <Shirt size={size} />;
         case 'silah': return <Sword size={size} />;
         case 'qalxan': return <Shield size={size} />;
         case 'çəkmə': return <Footprints size={size} />;
         case 'boyunbağı': return <Award size={size} />;
         case 'şalvar': return <span style={{ fontSize: `${size}px`, lineHeight: 1 }}>👖</span>;
-        case 'əlcək': return <Zap size={size} />;
+        case 'əlcək': return <Hand size={size} />;
         default: return <UserIcon size={size} />;
     }
 };
