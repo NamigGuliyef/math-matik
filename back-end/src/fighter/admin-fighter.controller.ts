@@ -38,7 +38,7 @@ export class AdminFighterController {
     @UseInterceptors(
         FileInterceptor('file', {
             storage: diskStorage({
-                destination: './uploads',
+                destination: process.env.VERCEL ? '/tmp/uploads' : './uploads',
                 filename: (req, file, cb) => {
                     const randomName = Array(32)
                         .fill(null)

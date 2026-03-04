@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 let cachedApp: any;
 
@@ -27,8 +28,15 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  // Vercel-də /tmp qovluğu yazmaq üçün açıqdır
+  const uploadPath = process.env.VERCEL ? join('/tmp', 'uploads') : join(process.cwd(), 'uploads');
+
+  if (!existsSync(uploadPath)) {
+    mkdirSync(uploadPath, { recursive: true });
+  }
+
   // Yüklənmiş şəkilləri statik fayl kimi serve et
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+  app.useStaticAssets(uploadPath, {
     prefix: '/uploads',
   });
 
