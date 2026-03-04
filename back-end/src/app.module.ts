@@ -6,6 +6,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { AdminModule } from './admin/admin.module';
 import { LeaderboardController } from './leaderboard/leaderboard.controller';
 import { ActivityModule } from './activity/activity.module';
+import { FighterModule } from './fighter/fighter.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -16,6 +17,7 @@ import { ActivityModule } from './activity/activity.module';
     QuestionsModule,
     AdminModule,
     ActivityModule,
+    FighterModule,
   ],
   controllers: [LeaderboardController],
   providers: [],

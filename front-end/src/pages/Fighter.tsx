@@ -24,7 +24,13 @@ interface InventoryRecord {
     isEquipped: boolean;
 }
 
-const API_BASE = 'http://localhost:8002'; // Replace with your backend URL if different
+const API_BASE = 'http://localhost:8002';
+
+const getLevelColor = (level: number) => {
+    if (level === 2) return 'lvl-2';
+    if (level === 3) return 'lvl-3';
+    return 'lvl-1';
+};
 
 const Fighter: React.FC = () => {
     const { user, token } = useAuth();
@@ -123,39 +129,17 @@ const Fighter: React.FC = () => {
         }
     };
 
-    const getSlotIcon = (category: string, itemImage?: string) => {
-        if (itemImage) {
-            return <img src={itemImage} alt={category} className="item-image-content" />;
-        }
-
-        switch (category) {
-            case 'şlem': return <HardHat size={40} />;
-            case 'zireh': return <Shirt size={40} />;
-            case 'silah': return <Sword size={40} />;
-            case 'qalxan': return <Shield size={40} />;
-            case 'çəkmə': return <Footprints size={40} />;
-            case 'boyunbağı': return <Award size={40} />;
-            case 'şalvar': return <div style={{ fontSize: '40px', fontWeight: 'bold' }}>👖</div>;
-            case 'əlcək': return <Zap size={40} />;
-            default: return <UserIcon size={40} />;
-        }
-    };
-
-    const getLevelColor = (level: number) => {
-        if (level === 2) return 'lvl-2';
-        if (level === 3) return 'lvl-3';
-        return 'lvl-1';
-    };
-
     if (loading) return <div className="fighter-container">Yüklənir...</div>;
 
     return (
         <div className="fighter-container">
+            {/* Balance */}
             <div className="balance-card">
                 <Coins className="coin-icon" />
                 <span>{Number(balance).toFixed(3).replace(/\.?0+$/, '')} AZN</span>
             </div>
 
+            {/* Tabs */}
             <div className="fighter-tabs">
                 <button
                     className={`fighter-tab ${activeTab === 'fighter' ? 'active' : ''}`}
@@ -172,70 +156,90 @@ const Fighter: React.FC = () => {
             </div>
 
             {activeTab === 'fighter' ? (
-                <div className="fighter-view">
-                    <div className="fighter-visual-section">
-                        <div className="fighter-slots-left">
-                            <Slot item={equipped['şlem']} label="Şlem" category="şlem" onUnequip={handleUnequip} />
-                            <Slot item={equipped['zireh']} label="Zireh" category="zireh" onUnequip={handleUnequip} />
-                            <Slot item={equipped['silah']} label="Sağ əl" category="silah" onUnequip={handleUnequip} />
-                            <Slot item={equipped['qalxan']} label="Sol əl" category="qalxan" onUnequip={handleUnequip} />
-                        </div>
+                <div className="fighter-two-col">
+                    {/* LEFT: Character + Equipment */}
+                    <div className="fighter-left-col">
+                        <div className="fighter-visual-section">
+                            <div className="fighter-slots-left">
+                                <Slot item={equipped['şlem']} label="Şlem" category="şlem" onUnequip={handleUnequip} />
+                                <Slot item={equipped['zireh']} label="Zireh" category="zireh" onUnequip={handleUnequip} />
+                                <Slot item={equipped['silah']} label="Sağ əl" category="silah" onUnequip={handleUnequip} />
+                                <Slot item={equipped['qalxan']} label="Sol əl" category="qalxan" onUnequip={handleUnequip} />
+                            </div>
 
-                        <div className="fighter-avatar-wrap">
-                            <div className="fighter-base">
-                                <UserIcon size={200} opacity={0.1} />
-                                <div style={{ position: 'absolute', bottom: '20px', fontSize: '1.2rem', fontWeight: 800, color: 'var(--fighter-accent)' }}>
-                                    {user?.name} {user?.surname}
+                            <div className="fighter-avatar-wrap">
+                                <div className="fighter-base">
+                                    <UserIcon size={160} opacity={0.1} />
+                                    <div className="fighter-name">
+                                        {user?.name} {user?.surname}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="fighter-slots-right">
-                            <Slot item={equipped['çəkmə']} label="Çəkmə" category="çəkmə" onUnequip={handleUnequip} />
-                            <Slot item={equipped['boyunbağı']} label="Boyunbağı" category="boyunbağı" onUnequip={handleUnequip} />
-                            <Slot item={equipped['şalvar']} label="Şalvar" category="şalvar" onUnequip={handleUnequip} />
-                            <Slot item={equipped['əlcək']} label="Əlcək" category="əlcək" onUnequip={handleUnequip} />
+                            <div className="fighter-slots-right">
+                                <Slot item={equipped['çəkmə']} label="Çəkmə" category="çəkmə" onUnequip={handleUnequip} />
+                                <Slot item={equipped['boyunbağı']} label="Boyunbağı" category="boyunbağı" onUnequip={handleUnequip} />
+                                <Slot item={equipped['şalvar']} label="Şalvar" category="şalvar" onUnequip={handleUnequip} />
+                                <Slot item={equipped['əlcək']} label="Əlcək" category="əlcək" onUnequip={handleUnequip} />
+                            </div>
                         </div>
                     </div>
 
-                    <h2 style={{ marginTop: '4rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <ShoppingBag /> Çanta (İnventar)
-                    </h2>
-                    <div className="fighter-inventory-grid">
-                        {bag.map(record => (
-                            <div key={record._id} className={`item-card level-${record.itemId.level}`}>
-                                <div className="item-header">
-                                    <span className={`item-level-badge ${getLevelColor(record.itemId.level)}`}>
-                                        Səviyyə {record.itemId.level}
-                                    </span>
-                                    <span className="item-category-icon">{getSlotIcon(record.itemId.category, record.itemId.image)}</span>
+                    {/* RIGHT: Bag / Inventory */}
+                    <div className="fighter-right-col">
+                        <h2 className="bag-title">
+                            <ShoppingBag size={20} /> Çanta (İnventar)
+                        </h2>
+                        <div className="bag-grid">
+                            {bag.map(record => (
+                                <div key={record._id} className={`bag-item-card level-${record.itemId.level}`}>
+                                    <div className="item-image-panel">
+                                        <SlotIcon category={record.itemId.category} image={record.itemId.image} size={36} />
+                                        {/* Info Tooltip (shown on hover) */}
+                                        <div className="item-tooltip">
+                                            <div className={`tooltip-level ${getLevelColor(record.itemId.level)}`}>
+                                                SƏV {record.itemId.level}
+                                            </div>
+                                            <div className="tooltip-name">{record.itemId.name}</div>
+                                        </div>
+                                    </div>
+                                    <div className="item-body">
+                                        <button className="btn-equip" onClick={() => handleEquip(record._id)}>Geyin</button>
+                                    </div>
                                 </div>
-                                <div className="item-name">{record.itemId.name}</div>
-                                <div className="item-actions">
-                                    <button className="btn-equip" onClick={() => handleEquip(record._id)}>Geyin</button>
-                                </div>
-                            </div>
-                        ))}
-                        {bag.length === 0 && <p style={{ opacity: 0.5 }}>Çantanız boşdur. Mağazadan alış-veriş edin!</p>}
+                            ))}
+                        </div>
+                        {bag.length === 0 && (
+                            <p className="bag-empty">Çantanız boşdur. Mağazadan alış-veriş edin!</p>
+                        )}
                     </div>
                 </div>
             ) : (
                 <div className="shop-view">
-                    <h2 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <ShoppingBag /> İnventar Kataloqu
+                    <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <ShoppingBag size={20} /> İnventar Kataloqu
                     </h2>
                     <div className="fighter-inventory-grid">
                         {shopItems.map(item => (
                             <div key={item._id} className={`item-card level-${item.level}`}>
-                                <div className="item-header">
-                                    <span className={`item-level-badge ${getLevelColor(item.level)}`}>
-                                        Səviyyə {item.level}
-                                    </span>
-                                    <span className="item-category-icon">{getSlotIcon(item.category, item.image)}</span>
+                                <div className="item-image-panel">
+                                    <SlotIcon category={item.category} image={item.image} size={36} />
+                                    <div className={`item-card-level-badge ${getLevelColor(item.level)}`}>
+                                        SV {item.level}
+                                    </div>
+                                    {/* Info Tooltip (shown on hover) */}
+                                    <div className="item-tooltip">
+                                        <div className={`tooltip-level ${getLevelColor(item.level)}`}>
+                                            SƏV {item.level}
+                                        </div>
+                                        <div className="tooltip-name">{item.name}</div>
+                                    </div>
                                 </div>
-                                <div className="item-name">{item.name}</div>
-                                <div className="item-price">{item.price} AZN</div>
-                                <div className="item-actions">
+                                <div className="item-details-brief">
+                                    <span className="item-card-name-label">{item.name}</span>
+                                </div>
+                                <div className="item-body">
+                                    <div className="item-price">{item.price} AZN</div>
                                     <button
                                         className="btn-buy"
                                         onClick={() => handlePurchase(item._id)}
@@ -249,41 +253,56 @@ const Fighter: React.FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 
-const Slot: React.FC<{ item: InventoryRecord | null, label: string, category: string, onUnequip: (id: string) => void }> = ({ item, label, category, onUnequip }) => {
-    const getSlotIcon = (cat: string, itemImage?: string) => {
-        if (itemImage) {
-            return <img src={itemImage} alt={cat} className="slot-image-content" />;
-        }
-        switch (cat) {
-            case 'şlem': return <HardHat size={32} />;
-            case 'zireh': return <Shirt size={32} />;
-            case 'silah': return <Sword size={32} />;
-            case 'qalxan': return <Shield size={32} />;
-            case 'çəkmə': return <Footprints size={32} />;
-            case 'boyunbağı': return <Award size={32} />;
-            case 'şalvar': return <span style={{ fontSize: '28px' }}>👖</span>;
-            case 'əlcək': return <Zap size={32} />;
-            default: return <UserIcon size={32} />;
-        }
-    };
+/* ── Slot Icon helper ── */
+const SlotIcon: React.FC<{ category: string; image?: string; size?: number }> = ({ category, image, size = 28 }) => {
+    if (image) {
+        return <img src={image} alt={category} className="slot-image-content" />;
+    }
+    switch (category) {
+        case 'şlem': return <HardHat size={size} />;
+        case 'zireh': return <Shirt size={size} />;
+        case 'silah': return <Sword size={size} />;
+        case 'qalxan': return <Shield size={size} />;
+        case 'çəkmə': return <Footprints size={size} />;
+        case 'boyunbağı': return <Award size={size} />;
+        case 'şalvar': return <span style={{ fontSize: `${size}px`, lineHeight: 1 }}>👖</span>;
+        case 'əlcək': return <Zap size={size} />;
+        default: return <UserIcon size={size} />;
+    }
+};
 
+/* ── Equipment Slot ── */
+const Slot: React.FC<{ item: InventoryRecord | null; label: string; category: string; onUnequip: (id: string) => void }> = ({
+    item, label, category, onUnequip
+}) => {
     return (
         <div className={`item-slot ${item ? 'has-item' : ''}`} data-level={item?.itemId.level}>
             <div className="slot-icon">
-                {item ? getSlotIcon(category, item.itemId.image) : getSlotIcon(category)}
+                <SlotIcon category={category} image={item?.itemId.image} size={40} />
             </div>
-            <div className="slot-label">{item ? item.itemId.name : label}</div>
+
+            {/* Show only default label (e.g. 'Şlem') as requested */}
+            <div className="slot-label">{label}</div>
+
             {item && (
-                <button className="unequip-btn" onClick={() => onUnequip(item._id)} title="Çıxar">
-                    <X size={14} />
-                </button>
-            )}
-            {item && item.itemId.level === 3 && (
-                <Flame className="glow-icon" style={{ position: 'absolute', top: '5px', left: '5px', color: '#fbbf24', width: '16px' }} />
+                <>
+                    {/* Very small level badge on character slot */}
+                    <div className={`slot-level-indicator ${getLevelColor(item.itemId.level)}`}>
+                        SV{item.itemId.level}
+                    </div>
+
+                    <button className="unequip-btn" onClick={() => onUnequip(item._id)} title="Çıxar">
+                        <X size={12} />
+                    </button>
+
+                    {item.itemId.level === 3 && (
+                        <Flame className="glow-icon" style={{ position: 'absolute', top: '4px', left: '4px', color: '#fbbf24', width: '12px' }} />
+                    )}
+                </>
             )}
         </div>
     );
