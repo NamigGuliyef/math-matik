@@ -22,6 +22,11 @@ export class FighterController {
         return this.fighterService.purchaseItem(req.user.userId, itemId);
     }
 
+    @Post('purchase-char/:charId')
+    async purchaseChar(@Request() req: any, @Param('charId') charId: string) {
+        return this.fighterService.purchaseCharacter(req.user.userId, charId);
+    }
+
     @Post('equip/:inventoryId')
     async equip(@Request() req: any, @Param('inventoryId') inventoryId: string) {
         return this.fighterService.equipItem(req.user.userId, inventoryId);

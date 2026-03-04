@@ -122,6 +122,72 @@
     box-shadow:
         0 0 40px rgba(0, 0, 0, 0.8),
         inset 0 0 30px rgba(56, 189, 248, 0.05);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Level Based Glows for Character */
+.fighter-base[data-level="1"] {
+    border-color: rgba(56, 189, 248, 0.6);
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.2), inset 0 0 20px rgba(56, 189, 248, 0.1);
+}
+
+.fighter-base[data-level="2"] {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3), inset 0 0 25px rgba(168, 85, 247, 0.15);
+    animation: pulse-rare 3s infinite alternate;
+}
+
+.fighter-base[data-level="3"] {
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 0 60px rgba(251, 191, 36, 0.4), inset 0 0 40px rgba(251, 191, 36, 0.2);
+    animation: gold-pulse 2s infinite alternate;
+}
+
+@keyframes pulse-rare {
+    from {
+        box-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
+    }
+
+    to {
+        box-shadow: 0 0 50px rgba(168, 85, 247, 0.4);
+    }
+}
+
+@keyframes gold-pulse {
+    from {
+        box-shadow: 0 0 40px rgba(251, 191, 36, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.4);
+    }
+
+    to {
+        box-shadow: 0 0 80px rgba(251, 191, 36, 0.6), inset 0 0 60px rgba(251, 191, 36, 0.3);
+        border-color: rgba(251, 191, 36, 0.8);
+    }
+}
+
+.item-image-panel {
+    width: 100%;
+    height: 80px;
+    background: rgba(15, 23, 42, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.item-card.character-card .slot-image-content {
+    height: 110px;
+    /* Enlarge shop character */
+    width: auto;
+    object-fit: contain;
+    transform: translateY(5px);
+}
+
+.bag-char-card .slot-image-content {
+    height: 60px;
+    /* Enlarge bag character */
+    width: auto;
+    object-fit: contain;
 }
 
 .fighter-base::before {
@@ -146,6 +212,105 @@
     padding: 0 8px;
 }
 
+.equipped-char-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 30px;
+    display: block;
+}
+
+/* Global Card Specific Proportions (Shop & Bag) */
+.item-card,
+.bag-item-card {
+    min-height: 250px;
+}
+
+.item-image-panel {
+    height: 170px !important;
+    /* Force all cards to have large images */
+    aspect-ratio: auto;
+}
+
+.slot-image-content {
+    height: 140px !important;
+    width: auto !important;
+    object-fit: contain;
+    transform: translateY(5px);
+}
+
+.item-details-brief {
+    padding: 4px 8px 0;
+}
+
+.item-card-name-label {
+    font-size: 0.75rem;
+}
+
+.item-body {
+    padding: 4px 8px 8px;
+    gap: 2px;
+}
+
+.item-price {
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+}
+
+.btn-buy,
+.btn-equip {
+    padding: 4px;
+    font-size: 0.75rem;
+}
+
+/* Bag Card Adjustments (keeping them slightly more compact than shop) */
+.bag-grid .bag-item-card {
+    min-height: 140px;
+}
+
+.bag-grid .item-image-panel {
+    height: 90px !important;
+}
+
+.bag-grid .slot-image-content {
+    height: 80px !important;
+}
+
+.bag-grid .btn-equip {
+    padding: 2px;
+    font-size: 0.7rem;
+}
+
+.char-unequip-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    background: rgba(239, 68, 68, 0.8);
+    border: 1px solid rgba(239, 68, 68, 1);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fighter-base:hover .char-unequip-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.char-unequip-btn:hover {
+    background: #ef4444;
+    transform: scale(1.1);
+}
+
 .fighter-slots-left,
 .fighter-slots-right {
     display: flex;
@@ -155,8 +320,8 @@
 
 /* ── EQUIPMENT SLOT ── */
 .item-slot {
-    width: 76px;
-    height: 76px;
+    width: 82px;
+    height: 82px;
     background: rgba(30, 41, 59, 0.6);
     border: 2px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
@@ -214,8 +379,8 @@
 
 .slot-level-indicator {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
+    top: 4px;
+    left: 4px;
     font-size: 0.5rem;
     font-weight: 900;
     color: white;
@@ -238,22 +403,23 @@
 }
 
 .slot-label {
-    font-size: 0.55rem;
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    font-size: 0.58rem;
     text-transform: uppercase;
-    font-weight: 800;
-    color: rgba(255, 255, 255, 0.3);
-    margin-top: 4px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.4);
     letter-spacing: 0.5px;
     text-align: center;
-    max-width: 70px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .item-slot.has-item .slot-label {
-    color: #fff;
-    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .item-slot .unequip-btn {

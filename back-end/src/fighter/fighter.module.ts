@@ -5,6 +5,7 @@ import { FighterController } from './fighter.controller';
 import { AdminFighterController } from './admin-fighter.controller';
 import { FighterItem, FighterItemSchema } from './schemas/fighter-item.schema';
 import { UserInventory, UserInventorySchema } from './schemas/user-inventory.schema';
+import { Character, CharacterSchema } from './schemas/character.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
@@ -12,6 +13,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
         MongooseModule.forFeature([
             { name: FighterItem.name, schema: FighterItemSchema },
             { name: UserInventory.name, schema: UserInventorySchema },
+            { name: Character.name, schema: CharacterSchema },
             { name: User.name, schema: UserSchema },
         ]),
     ],

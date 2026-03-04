@@ -18,9 +18,18 @@ interface FighterItem {
     image?: string;
 }
 
+interface Character {
+    _id: string;
+    name: string;
+    level: number;
+    price: number;
+    image: string;
+}
+
 interface InventoryRecord {
     _id: string;
-    itemId: FighterItem;
+    itemId?: FighterItem;
+    characterId?: Character;
     isEquipped: boolean;
 }
 
@@ -45,9 +54,11 @@ const Fighter: React.FC = () => {
         'boyunbağı': null,
         'şalvar': null,
         'əlcək': null,
+        'character': null,
     });
     const [bag, setBag] = useState<InventoryRecord[]>([]);
     const [shopItems, setShopItems] = useState<FighterItem[]>([]);
+    const [shopCharacters, setShopCharacters] = useState<Character[]>([]);
     const [balance, setBalance] = useState<number>(user?.balance || 0);
     const [loading, setLoading] = useState(true);
 
@@ -66,10 +77,15 @@ const Fighter: React.FC = () => {
             const equippedMap: Record<string, InventoryRecord | null> = {
                 'şlem': null, 'zireh': null, 'silah': null, 'qalxan': null,
                 'çəkmə': null, 'boyunbağı': null, 'şalvar': null, 'əlcək': null,
+                'character': null,
             };
 
-            equippedList.forEach((item: InventoryRecord) => {
-                equippedMap[item.itemId.category] = item;
+            equippedList.forEach((record: InventoryRecord) => {
+                if (record.itemId) {
+                    equippedMap[record.itemId.category] = record;
+                } else if (record.characterId) {
+                    equippedMap['character'] = record;
+                }
             });
 
             setEquipped(equippedMap);
@@ -86,7 +102,8 @@ const Fighter: React.FC = () => {
             const resp = await axios.get(`${API_BASE}/fighter/shop`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setShopItems(resp.data);
+            setShopItems(resp.data.items);
+            setShopCharacters(resp.data.characters);
         } catch (err) {
             console.error('Error fetching shop:', err);
         }
@@ -100,10 +117,25 @@ const Fighter: React.FC = () => {
             if (response.data.balance !== undefined) {
                 setBalance(response.data.balance);
             }
+            showNotification('Əşya alındı!', 'success');
             fetchFighterData();
-            showNotification('Təbriklər! Yeni əşya alındı.', 'success');
         } catch (err: any) {
-            showNotification(err.response?.data?.message || 'Alış zamanı xəta baş verdi', 'error');
+            showNotification(err.response?.data?.message || 'Balansınız kifayət etmir', 'error');
+        }
+    };
+
+    const handlePurchaseChar = async (charId: string) => {
+        try {
+            const response = await axios.post(`${API_BASE}/fighter/purchase-char/${charId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data.balance !== undefined) {
+                setBalance(response.data.balance);
+            }
+            showNotification('Karakter alındı!', 'success');
+            fetchFighterData();
+        } catch (err: any) {
+            showNotification(err.response?.data?.message || 'Balansınız kifayət etmir', 'error');
         }
     };
 
@@ -168,10 +200,27 @@ const Fighter: React.FC = () => {
                             </div>
 
                             <div className="fighter-avatar-wrap">
-                                <div className="fighter-base">
-                                    <UserIcon size={160} opacity={0.1} />
+                                <div className="fighter-base" data-level={equipped.character?.characterId?.level || 0}>
+                                    {equipped.character ? (
+                                        <>
+                                            <img
+                                                src={equipped.character.characterId?.image}
+                                                alt="Karakter"
+                                                className="equipped-char-image"
+                                            />
+                                            <button
+                                                className="char-unequip-btn"
+                                                onClick={() => handleUnequip(equipped.character!._id)}
+                                                title="Character-i çıxar"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <UserIcon size={160} opacity={0.1} />
+                                    )}
                                     <div className="fighter-name">
-                                        {user?.name} {user?.surname}
+
                                     </div>
                                 </div>
                             </div>
@@ -191,23 +240,33 @@ const Fighter: React.FC = () => {
                             <ShoppingBag size={20} /> Çanta (İnventar)
                         </h2>
                         <div className="bag-grid">
-                            {bag.map(record => (
-                                <div key={record._id} className={`bag-item-card level-${record.itemId.level}`}>
-                                    <div className="item-image-panel">
-                                        <SlotIcon category={record.itemId.category} image={record.itemId.image} size={36} />
-                                        {/* Info Tooltip (shown on hover) */}
-                                        <div className="item-tooltip">
-                                            <div className={`tooltip-level ${getLevelColor(record.itemId.level)}`}>
-                                                SƏV {record.itemId.level}
+                            {bag.map(record => {
+                                const isItem = !!record.itemId;
+                                const data = isItem ? record.itemId : record.characterId;
+                                if (!data) return null;
+
+                                return (
+                                    <div key={record._id} className={`bag-item-card level-${data.level} ${!isItem ? 'bag-char-card' : ''}`}>
+                                        <div className="item-image-panel">
+                                            <SlotIcon
+                                                category={isItem ? (data as FighterItem).category : 'character'}
+                                                image={data.image}
+                                                size={36}
+                                            />
+                                            {/* Info Tooltip (shown on hover) */}
+                                            <div className="item-tooltip">
+                                                <div className={`tooltip-level ${getLevelColor(data.level)}`}>
+                                                    SƏV {data.level}
+                                                </div>
+                                                <div className="tooltip-name">{data.name}</div>
                                             </div>
-                                            <div className="tooltip-name">{record.itemId.name}</div>
+                                        </div>
+                                        <div className="item-body">
+                                            <button className="btn-equip" onClick={() => handleEquip(record._id)}>Geyin</button>
                                         </div>
                                     </div>
-                                    <div className="item-body">
-                                        <button className="btn-equip" onClick={() => handleEquip(record._id)}>Geyin</button>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         {bag.length === 0 && (
                             <p className="bag-empty">Çantanız boşdur. Mağazadan alış-veriş edin!</p>
@@ -220,6 +279,7 @@ const Fighter: React.FC = () => {
                         <ShoppingBag size={20} /> İnventar Kataloqu
                     </h2>
                     <div className="fighter-inventory-grid">
+                        {/* Render Items */}
                         {shopItems.map(item => (
                             <div key={item._id} className={`item-card level-${item.level}`}>
                                 <div className="item-image-panel">
@@ -227,7 +287,6 @@ const Fighter: React.FC = () => {
                                     <div className={`item-card-level-badge ${getLevelColor(item.level)}`}>
                                         SV {item.level}
                                     </div>
-                                    {/* Info Tooltip (shown on hover) */}
                                     <div className="item-tooltip">
                                         <div className={`tooltip-level ${getLevelColor(item.level)}`}>
                                             SƏV {item.level}
@@ -244,6 +303,36 @@ const Fighter: React.FC = () => {
                                         className="btn-buy"
                                         onClick={() => handlePurchase(item._id)}
                                         disabled={(balance || 0) < item.price}
+                                    >
+                                        Alış Et
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {shopCharacters.map(char => (
+                            <div key={char._id} className={`item-card level-${char.level} character-card`}>
+                                <div className="item-image-panel">
+                                    <SlotIcon category="character" image={char.image} size={36} />
+                                    <div className={`item-card-level-badge ${getLevelColor(char.level)}`}>
+                                        SV {char.level}
+                                    </div>
+                                    <div className="item-tooltip">
+                                        <div className={`tooltip-level ${getLevelColor(char.level)}`}>
+                                            SƏV {char.level}
+                                        </div>
+                                        <div className="tooltip-name">{char.name}</div>
+                                    </div>
+                                </div>
+                                <div className="item-details-brief">
+                                    <span className="item-card-name-label">{char.name}</span>
+                                </div>
+                                <div className="item-body">
+                                    <div className="item-price">{char.price} AZN</div>
+                                    <button
+                                        className="btn-buy"
+                                        onClick={() => handlePurchaseChar(char._id)}
+                                        disabled={(balance || 0) < char.price}
                                     >
                                         Alış Et
                                     </button>
@@ -279,28 +368,30 @@ const SlotIcon: React.FC<{ category: string; image?: string; size?: number }> = 
 const Slot: React.FC<{ item: InventoryRecord | null; label: string; category: string; onUnequip: (id: string) => void }> = ({
     item, label, category, onUnequip
 }) => {
+    const itemData = item?.itemId;
+
     return (
-        <div className={`item-slot ${item ? 'has-item' : ''}`} data-level={item?.itemId.level}>
+        <div className={`item-slot ${item ? 'has-item' : ''}`} data-level={itemData?.level}>
             <div className="slot-icon">
-                <SlotIcon category={category} image={item?.itemId.image} size={40} />
+                <SlotIcon category={category} image={itemData?.image} size={44} />
             </div>
 
-            {/* Show only default label (e.g. 'Şlem') as requested */}
-            <div className="slot-label">{label}</div>
+            {/* Show only default label (e.g. 'Şlem') when slot is empty */}
+            {!item && <div className="slot-label">{label}</div>}
 
-            {item && (
+            {item && itemData && (
                 <>
                     {/* Very small level badge on character slot */}
-                    <div className={`slot-level-indicator ${getLevelColor(item.itemId.level)}`}>
-                        SV{item.itemId.level}
+                    <div className={`slot-level-indicator ${getLevelColor(itemData.level)}`}>
+                        SV{itemData.level}
                     </div>
 
                     <button className="unequip-btn" onClick={() => onUnequip(item._id)} title="Çıxar">
                         <X size={12} />
                     </button>
 
-                    {item.itemId.level === 3 && (
-                        <Flame className="glow-icon" style={{ position: 'absolute', top: '4px', left: '4px', color: '#fbbf24', width: '12px' }} />
+                    {itemData.level === 3 && (
+                        <Flame className="glow-icon" style={{ position: 'absolute', top: '4px', right: '4px', color: '#fbbf24', width: '12px' }} />
                     )}
                 </>
             )}

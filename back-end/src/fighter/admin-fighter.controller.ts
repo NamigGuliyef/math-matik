@@ -66,4 +66,20 @@ export class AdminFighterController {
             url: `http://localhost:8002/uploads/${file.filename}`,
         };
     }
+
+    // Character Management Endpoints
+    @Get('characters')
+    async getCharacters() {
+        return this.fighterService.getAllCharacters();
+    }
+
+    @Post('characters')
+    async createCharacter(@Body() characterData: any) {
+        return this.fighterService.createCharacter(characterData);
+    }
+
+    @Delete('characters/:id')
+    async deleteCharacter(@Param('id') id: string) {
+        return this.fighterService.deleteCharacter(id);
+    }
 }
