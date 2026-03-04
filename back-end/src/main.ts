@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -33,14 +34,21 @@ async function bootstrap() {
 
   await app.init();
 
-  if (process.env.NODE_ENV !== 'production') {
-    const port = process.env.PORT || 8002;
-    await app.listen(port);
-    console.log(`Application is running on: http://localhost:${port}`);
-  }
-
   cachedApp = app.getHttpAdapter().getInstance();
   return cachedApp;
 }
 
-export default bootstrap();
+// Development mode listener
+if (process.env.NODE_ENV !== 'production') {
+  bootstrap().then(app => {
+    const port = process.env.PORT || 8002;
+    app.listen(port, () => {
+      console.log(`Application is running on: http://localhost:${port}`);
+    });
+  });
+}
+
+export default async (req: any, res: any) => {
+  const app = await bootstrap();
+  return app(req, res);
+};
