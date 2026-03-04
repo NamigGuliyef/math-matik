@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
 import {
-    Sword, Shield, HardHat, Footprints,
-    Shirt, User as UserIcon, ShoppingBag,
-    Coins, X, Award, Flame, Zap,
-    HandMetal,
-    Hand
+    Award,
+    Coins,
+    Flame,
+    Footprints,
+    Hand,
+    HardHat,
+    Shield,
+    Shirt,
+    ShoppingBag,
+    Sword,
+    User as UserIcon,
+    X,
+    Zap
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import './Fighter.css';
 

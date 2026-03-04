@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import {
+    Award,
+    Footprints,
+    Hand,
+    HardHat,
+    Plus,
+    Shield,
+    Shirt,
+    Sword,
+    Trash2,
+    User as UserIcon
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
-import {
-    Plus, Trash2, Sword, Shield, HardHat,
-    Footprints, Shirt, User as UserIcon, Award, Zap,
-    HandMetal,
-    Hand
-} from 'lucide-react';
 
 interface FighterItem {
     _id: string;

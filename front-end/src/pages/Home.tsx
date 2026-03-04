@@ -1,4 +1,4 @@
-import { Award, BookOpen, Brain, CheckCircle, ChevronRight, Lightbulb, Play, Rocket, Shield, Star, Target, TrendingUp, Trophy, Users, Zap } from 'lucide-react';
+import { Award, BookOpen, Brain, CheckCircle, ChevronRight, Flame, Lightbulb, Play, Rocket, Shield, Star, Sword, Target, TrendingUp, Trophy, User as UserIcon, Users, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
@@ -146,6 +146,50 @@ const Home: React.FC = () => {
                         </div>
                         <div className="side-visual-v2">
                             <img src={STEPS_IMAGE} alt="Steps Illustration" className="side-img" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* FIGHTER MODE SHOWCASE */}
+            <section className="fighter-showcase">
+                <div className="container">
+                    <div className="fighter-preview-card glass-card">
+                        <div className="fighter-showcase-content">
+                            <div className="fighter-badge">
+                                <Sword size={16} /> <span>Yenilik: Döyüşçü Rejimi</span>
+                            </div>
+                            <h2>Riyaziyyatın <span className="text-gradient-v2">Qəhrəmanı Ol!</span></h2>
+                            <p>
+                                Misalları həll et, qızıl qazan və öz döyüşçünü təkmilləşdir.
+                                Nadir zirehlər, güclü silahlar və unikal xarakterlər səni gözləyir.
+                            </p>
+                            <div className="fighter-features-grid">
+                                <div className="f-feature">
+                                    <UserIcon size={20} color="var(--primary)" />
+                                    <span>Xarakterini Yarat</span>
+                                </div>
+                                <div className="f-feature">
+                                    <Shield size={20} color="#3b82f6" />
+                                    <span>Nadir İnventar</span>
+                                </div>
+                                <div className="f-feature">
+                                    <Flame size={20} color="#ef4444" />
+                                    <span>Güclü Göstəricilər</span>
+                                </div>
+                            </div>
+                            <Link to="/fighter" className="btn-main mt-2">
+                                Döyüşçümə Get <ChevronRight size={20} />
+                            </Link>
+                        </div>
+                        <div className="fighter-visual-preview">
+                            <img src="/assets/hero.png" alt="Fighter Preview" className="fighter-preview-img" />
+                            <div className="stat-floater sf-1">
+                                <Sword size={14} color="#ef4444" /> <span>Hücum +25</span>
+                            </div>
+                            <div className="stat-floater sf-2">
+                                <Shield size={14} color="#3b82f6" /> <span>Müdafiə +15</span>
+                            </div>
                         </div>
                     </div>
                 </div>
