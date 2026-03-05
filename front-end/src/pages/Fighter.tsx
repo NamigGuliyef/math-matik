@@ -53,6 +53,12 @@ const getLevelColor = (level: number) => {
     return 'lvl-1';
 };
 
+const getImageUrl = (path?: string) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `${API_BASE_CLEAN}${path}`;
+};
+
 const Fighter: React.FC = () => {
     const { user, token } = useAuth();
     const { showNotification } = useNotification();
@@ -324,7 +330,7 @@ const Fighter: React.FC = () => {
                                     {equipped.character ? (
                                         <>
                                             <img
-                                                src={equipped.character.characterId?.image}
+                                                src={getImageUrl(equipped.character.characterId?.image)}
                                                 alt="Karakter"
                                                 className="equipped-char-image"
                                             />
@@ -478,7 +484,7 @@ const Fighter: React.FC = () => {
 /* ── Slot Icon helper ── */
 const SlotIcon: React.FC<{ category: string; image?: string; size?: number }> = ({ category, image, size = 28 }) => {
     if (image) {
-        return <img src={image} alt={category} className="slot-image-content" />;
+        return <img src={getImageUrl(image)} alt={category} className="slot-image-content" />;
     }
     switch (category) {
         case 'dəbilqə': return <HardHat size={size} />;
