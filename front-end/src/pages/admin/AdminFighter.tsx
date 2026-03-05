@@ -99,8 +99,14 @@ const AdminFighter: React.FC = () => {
 
     const getImageUrl = (path?: string) => {
         if (!path) return '';
-        if (path.startsWith('http')) return path;
-        return `${API_BASE_CLEAN}${path}`;
+        // Köhnə verilənlər bazasında olan localhost/127.0.0.1 linklərini təmizlə
+        let cleanPath = path.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/g, '');
+
+        if (cleanPath.startsWith('http')) return cleanPath;
+
+        // Ensure leading slash
+        const normalizedPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+        return `${API_BASE_CLEAN}${normalizedPath}`;
     };
 
     useEffect(() => {
