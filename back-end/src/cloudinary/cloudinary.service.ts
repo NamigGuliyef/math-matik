@@ -1,20 +1,26 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CloudinaryResponse } from './cloudinary.response';
 const streamifier = require('streamifier');
 
 @Injectable()
 export class CloudinaryService {
-    constructor(@Inject('CLOUDINARY') private cloudinary: any) { }
+    constructor(
+        @Inject('CLOUDINARY') private cloudinary: any,
+        private configService: ConfigService,
+    ) { }
 
     uploadFile(file: any): Promise<CloudinaryResponse> {
         console.log('CloudinaryService.uploadFile started');
 
-        // Debug config from the injected instance
-        const config = this.cloudinary.config();
-        console.log('Injected Cloudinary Config Check:', {
-            hasCloudName: !!config.cloud_name,
-            hasApiKey: !!config.api_key,
-            hasApiSecret: !!config.api_secret,
+        const cloudName = this.configService.get('CLOUDINARY_NAME') || process.env.CLOUDINARY_NAME;
+        const apiKey = this.configService.get('CLOUDINARY_API_KEY') || process.env.CLOUDINARY_API_KEY;
+        const apiSecret = this.configService.get('CLOUDINARY_API_SECRET') || process.env.CLOUDINARY_API_SECRET;
+
+        console.log('Using explicit config in upload call:', {
+            hasCloudName: !!cloudName,
+            hasApiKey: !!apiKey,
+            hasApiSecret: !!apiSecret,
         });
 
         return new Promise<CloudinaryResponse>((resolve, reject) => {
@@ -27,6 +33,9 @@ export class CloudinaryService {
                 {
                     folder: 'math-matik',
                     resource_type: 'auto',
+                    cloud_name: cloudName,
+                    api_key: apiKey,
+                    api_secret: apiSecret,
                 },
                 (error, result) => {
                     if (error) {
