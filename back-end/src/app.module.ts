@@ -9,6 +9,7 @@ import { ActivityModule } from './activity/activity.module';
 import { FighterModule } from './fighter/fighter.module';
 import { ConfigModule } from '@nestjs/config';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     ActivityModule,
     FighterModule,
     CloudinaryModule,
+    ChatModule,
   ],
   controllers: [LeaderboardController],
   providers: [],

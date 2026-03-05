@@ -54,7 +54,10 @@ export class User extends Document {
   levelProgress: Map<string, number>;
 
   @Prop({ default: 0 })
-  sessionWrongAnswers: number; // Keep for now if any generic logic relies on it, but we'll prioritize maps
+  sessionWrongAnswers: number;
+
+  @Prop({ default: Date.now })
+  lastActivity: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

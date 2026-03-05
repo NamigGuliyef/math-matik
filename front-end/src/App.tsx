@@ -19,6 +19,7 @@ import AdminFighter from './pages/admin/AdminFighter';
 import AdminGuard from './components/AdminGuard';
 
 import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings, Shield } from 'lucide-react';
+import GlobalChat from './components/GlobalChat';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -118,7 +119,7 @@ const App: React.FC = () => {
               <Route path="fighter" element={<AdminFighter />} />
             </Route>
           </Routes>
-
+          <GlobalChat />
           <footer className="footer" style={{
             padding: '2.5rem 0',
             backgroundColor: 'rgba(15, 23, 42, 0.9)',

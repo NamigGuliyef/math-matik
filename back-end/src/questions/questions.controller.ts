@@ -13,6 +13,7 @@ import {
 import { QuestionsService } from './questions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
+import { ChatService } from '../chat/chat.service';
 
 import { ActivityService } from '../activity/activity.service';
 import { ActivityType } from '../activity/schemas/activity.schema';
@@ -23,6 +24,7 @@ export class QuestionsController {
     private questionsService: QuestionsService,
     private usersService: UsersService,
     private activityService: ActivityService,
+    private chatService: ChatService,
   ) { }
 
   @Get()
@@ -77,6 +79,19 @@ export class QuestionsController {
       isCorrect ? ActivityType.ANSWER_CORRECT : ActivityType.ANSWER_WRONG,
       `${question.level.toUpperCase()} sualına ${isCorrect ? 'düzgün' : 'səhv'} cavab verdi: "${question.text.substring(0, 30)}..."`,
     );
+
+    // If quiz is finished or chances are out, and it's a finish scenario
+    if (result && isCorrect) {
+      // We can check if the index matches the total question count for that level
+      const counts = await this.questionsService.getLevelQuestionCounts();
+      const totalInLevel = counts[level] || 0;
+
+      if (index === totalInLevel) {
+        // Quiz finished successfully
+        const name = req.user.name;
+        await this.chatService.createSystemMessage(`🔥 ${name} quiz-i ${totalInLevel}/${totalInLevel} nəticə ilə tamamladı!`);
+      }
+    }
 
     return result;
   }
