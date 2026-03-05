@@ -204,8 +204,8 @@
 }
 
 .fighter-base {
-    width: 220px;
-    height: 380px;
+    width: 250px;
+    height: 410px;
     background: rgba(15, 23, 42, 0.8);
     border: 2px solid rgba(56, 189, 248, 0.2);
     border-radius: 32px;
@@ -217,6 +217,8 @@
         0 0 40px rgba(0, 0, 0, 0.8),
         inset 0 0 30px rgba(56, 189, 248, 0.05);
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    /* Clip portrait to rounded corners */
 }
 
 /* Level Based Glows for Character */
@@ -414,8 +416,8 @@
 
 /* ── EQUIPMENT SLOT ── */
 .item-slot {
-    width: 82px;
-    height: 82px;
+    width: 90px;
+    height: 90px;
     background: rgba(30, 41, 59, 0.6);
     border: 2px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
@@ -426,6 +428,7 @@
     position: relative;
     transition: all 0.3s ease;
     backdrop-filter: blur(5px);
+    /* overflow: hidden;  <-- Removed this to show the unequip button */
 }
 
 .item-slot:hover {
@@ -465,10 +468,10 @@
 }
 
 .item-slot .slot-image-content {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    border-radius: 10px;
+    width: 80% !important;
+    height: 80% !important;
+    object-fit: contain !important;
+    border-radius: 8px;
 }
 
 .slot-level-indicator {
@@ -518,20 +521,23 @@
 
 .item-slot .unequip-btn {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    top: -8px;
+    right: -8px;
     background: #ef4444;
     color: white;
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    z-index: 20;
+    /* Ensure it's above everything */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .item-slot.has-item:hover .unequip-btn {

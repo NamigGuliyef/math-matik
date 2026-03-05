@@ -145,7 +145,7 @@ const Fighter: React.FC = () => {
 
     const fetchFighterData = async () => {
         try {
-            const resp = await axios.get(`${API_BASE_CLEAN}/fighter`, {
+            const resp = await axios.get(`${API_BASE_CLEAN}/fighter/my-fighter`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const { equipped: equippedList, bag: bagList } = resp.data;

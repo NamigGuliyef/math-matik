@@ -60,7 +60,7 @@ const Register: React.FC = () => {
                         <UserPlus size={32} />
                     </div>
                     <h2 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.75rem', fontWeight: 900 }}>Yeni Hesab</h2>
-                    <p>Math-Matik dünyasına xoş gəlmisiniz!</p>
+                    <p>Mathematics dünyasına xoş gəlmisiniz!</p>
                 </div>
 
                 <AnimatePresence mode="wait">

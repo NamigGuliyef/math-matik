@@ -8,6 +8,8 @@ import { UserInventory, UserInventorySchema } from './schemas/user-inventory.sch
 import { Character, CharacterSchema } from './schemas/character.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+
 @Module({
     imports: [
         MongooseModule.forFeature([
@@ -16,6 +18,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
             { name: Character.name, schema: CharacterSchema },
             { name: User.name, schema: UserSchema },
         ]),
+        CloudinaryModule,
     ],
     controllers: [FighterController, AdminFighterController],
     providers: [FighterService],

@@ -46,6 +46,13 @@ export class FighterService {
         return this.characterModel.findByIdAndDelete(id).exec();
     }
 
+    async getFeaturedCharacter() {
+        const characters = await this.characterModel.find().exec();
+        if (characters.length === 0) return null;
+        // Return a random character
+        return characters[Math.floor(Math.random() * characters.length)];
+    }
+
     // User methods
     async getShopItems() {
         const items = await this.itemModel.find().sort({ level: 1 }).exec();

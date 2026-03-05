@@ -8,11 +8,16 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+
 @Controller('admin/fighter')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminFighterController {
-    constructor(private readonly fighterService: FighterService) { }
+    constructor(
+        private readonly fighterService: FighterService,
+        private readonly cloudinaryService: CloudinaryService,
+    ) { }
 
     @Get('items')
     async getItems() {
@@ -35,35 +40,14 @@ export class AdminFighterController {
     }
 
     @Post('upload')
-    @UseInterceptors(
-        FileInterceptor('file', {
-            storage: diskStorage({
-                destination: process.env.VERCEL ? '/tmp/uploads' : './uploads',
-                filename: (req, file, cb) => {
-                    const randomName = Array(32)
-                        .fill(null)
-                        .map(() => Math.round(Math.random() * 16).toString(16))
-                        .join('');
-                    return cb(null, `${randomName}${extname(file.originalname)}`);
-                },
-            }),
-            fileFilter: (req, file, cb) => {
-                if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-                    return cb(new BadRequestException('Yalnız şəkil faylları qəbul edilir!'), false);
-                }
-                cb(null, true);
-            },
-            limits: {
-                fileSize: 5 * 1024 * 1024, // 5MB
-            },
-        }),
-    )
-    uploadFile(@UploadedFile() file: any) {
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadFile(@UploadedFile() file: Express.Multer.File) {
         if (!file) {
             throw new BadRequestException('Fayl yüklənmədi!');
         }
+        const result = await this.cloudinaryService.uploadFile(file);
         return {
-            url: `/uploads/${file.filename}`,
+            url: result.secure_url,
         };
     }
 
