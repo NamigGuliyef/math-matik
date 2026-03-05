@@ -63,7 +63,7 @@ export class AdminFighterController {
             throw new BadRequestException('Fayl yüklənmədi!');
         }
         return {
-            url: `http://localhost:8002/uploads/${file.filename}`,
+            url: `/uploads/${file.filename}`,
         };
     }
 

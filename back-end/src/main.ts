@@ -28,17 +28,25 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Vercel-də /tmp qovluğu yazmaq üçün açıqdır
-  const uploadPath = process.env.VERCEL ? join('/tmp', 'uploads') : join(process.cwd(), 'uploads');
+  // Vercel-də /tmp qovluğu yazmaq üçün açıqdır, amma biz artıq mövcud olan şəkilləri serve etməliyik
+  const uploadPath = process.env.VERCEL ? join(process.cwd(), 'uploads') : join(process.cwd(), 'uploads');
+  const tempUploadPath = process.env.VERCEL ? join('/tmp', 'uploads') : join(process.cwd(), 'uploads');
 
-  if (!existsSync(uploadPath)) {
-    mkdirSync(uploadPath, { recursive: true });
+  if (!existsSync(tempUploadPath)) {
+    mkdirSync(tempUploadPath, { recursive: true });
   }
 
   // Yüklənmiş şəkilləri statik fayl kimi serve et
   app.useStaticAssets(uploadPath, {
     prefix: '/uploads',
   });
+
+  // Əgər Vercel-dəyiksə /tmp-dən də serve edək (yeni yüklənənlər üçün)
+  if (process.env.VERCEL) {
+    app.useStaticAssets(tempUploadPath, {
+      prefix: '/uploads',
+    });
+  }
 
   await app.init();
 

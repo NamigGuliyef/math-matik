@@ -25,7 +25,8 @@ interface FighterItem {
     attributes?: Record<string, number>;
 }
 
-const API_BASE = 'http://localhost:8002';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+const API_BASE_CLEAN = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
 
 const AdminFighter: React.FC = () => {
     const { token } = useAuth();
@@ -96,6 +97,12 @@ const AdminFighter: React.FC = () => {
         ]
     };
 
+    const getImageUrl = (path?: string) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        return `${API_BASE_CLEAN}${path}`;
+    };
+
     useEffect(() => {
         fetchItems();
         fetchCharacters();
@@ -103,7 +110,7 @@ const AdminFighter: React.FC = () => {
 
     const fetchItems = async () => {
         try {
-            const resp = await axios.get(`${API_BASE}/admin/fighter/items`, {
+            const resp = await axios.get(`${API_BASE_CLEAN}/admin/fighter/items`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setItems(resp.data);
@@ -114,7 +121,7 @@ const AdminFighter: React.FC = () => {
 
     const fetchCharacters = async () => {
         try {
-            const resp = await axios.get(`${API_BASE}/admin/fighter/characters`, {
+            const resp = await axios.get(`${API_BASE_CLEAN}/admin/fighter/characters`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCharacters(resp.data);
@@ -132,7 +139,7 @@ const AdminFighter: React.FC = () => {
 
         setUploading(true);
         try {
-            const resp = await axios.post(`${API_BASE}/admin/fighter/upload`, formData, {
+            const resp = await axios.post(`${API_BASE_CLEAN}/admin/fighter/upload`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -156,7 +163,7 @@ const AdminFighter: React.FC = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_BASE}/admin/fighter/items`, newItem, {
+            await axios.post(`${API_BASE_CLEAN}/admin/fighter/items`, newItem, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setNewItem({ name: '', category: 'dəbilqə', level: 1, price: 0, image: '', attributes: {} });
@@ -170,7 +177,7 @@ const AdminFighter: React.FC = () => {
     const handleCreateCharacter = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await axios.post(`${API_BASE}/admin/fighter/characters`, newCharacter, {
+            await axios.post(`${API_BASE_CLEAN}/admin/fighter/characters`, newCharacter, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setNewCharacter({ name: '', level: 1, price: 0, image: '' });
@@ -185,7 +192,7 @@ const AdminFighter: React.FC = () => {
         if (!window.confirm('Bu seçimi silmək istədiyinizə əminsiniz?')) return;
         try {
             const endpoint = type === 'item' ? `items/${id}` : `characters/${id}`;
-            await axios.delete(`${API_BASE}/admin/fighter/${endpoint}`, {
+            await axios.delete(`${API_BASE_CLEAN}/admin/fighter/${endpoint}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             showNotification('Silindi', 'success');
@@ -199,7 +206,7 @@ const AdminFighter: React.FC = () => {
     const clearAllItems = async () => {
         if (!window.confirm('BÜTÜN əşyaları silmək istədiyinizə əminsiniz? Bu geri qaytarıla bilməz!')) return;
         try {
-            await axios.delete(`${API_BASE}/admin/fighter/items/clear-all`, {
+            await axios.delete(`${API_BASE_CLEAN}/admin/fighter/items/clear-all`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             showNotification('Bütün əşyalar silindi', 'success');
@@ -320,7 +327,7 @@ const AdminFighter: React.FC = () => {
 
         for (const item of requested) {
             try {
-                await axios.post(`${API_BASE}/admin/fighter/items`, item, {
+                await axios.post(`${API_BASE_CLEAN}/admin/fighter/items`, item, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (e) { console.error(e); }
@@ -331,7 +338,7 @@ const AdminFighter: React.FC = () => {
 
     const ItemThumbnail: React.FC<{ category: string; image?: string }> = ({ category, image }) => {
         if (image) {
-            return <img src={image} alt={category} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
+            return <img src={getImageUrl(image)} alt={category} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
         }
         const iconSize = 24;
         switch (category) {
@@ -342,7 +349,7 @@ const AdminFighter: React.FC = () => {
             case 'çəkmə': return <Footprints size={iconSize} />;
             case 'boyunbağı': return <Award size={iconSize} />;
             case 'şalvar': return <span style={{ fontSize: `${iconSize}px` }}>👖</span>;
-            case 'əlcək': return <Hand   size={iconSize} />;
+            case 'əlcək': return <Hand size={iconSize} />;
             default: return <UserIcon size={iconSize} />;
         }
     };
@@ -476,7 +483,7 @@ const AdminFighter: React.FC = () => {
                                     </label>
                                     {newItem.image && (
                                         <div style={{ width: '45px', height: '45px', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
-                                            <img src={newItem.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                            <img src={getImageUrl(newItem.image)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                         </div>
                                     )}
                                 </div>
@@ -604,7 +611,7 @@ const AdminFighter: React.FC = () => {
                                     </label>
                                     {newCharacter.image && (
                                         <div style={{ width: '45px', height: '45px', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
-                                            <img src={newCharacter.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                            <img src={getImageUrl(newCharacter.image)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                         </div>
                                     )}
                                 </div>
@@ -622,7 +629,7 @@ const AdminFighter: React.FC = () => {
                                 <div key={char._id} style={{ background: 'rgba(255,255,255,0.02)', padding: '1.2rem', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                     <div style={{ width: '60px', height: '60px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
                                         {char.image ? (
-                                            <img src={char.image} alt={char.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                            <img src={getImageUrl(char.image)} alt={char.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                         ) : (
                                             <UserIcon size={24} />
                                         )}
