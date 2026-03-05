@@ -39,14 +39,30 @@ export class AdminFighterController {
 
     @Post('upload')
     @UseInterceptors(FileInterceptor('file'))
-    async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    async uploadFile(@UploadedFile() file: any) {
+        console.log('Upload request received');
         if (!file) {
+            console.error('No file in request');
             throw new BadRequestException('Fayl yüklənmədi!');
         }
-        const result = await this.cloudinaryService.uploadFile(file);
-        return {
-            url: result.secure_url,
-        };
+
+        console.log('File details:', {
+            originalname: file.originalname,
+            bufferSize: file.buffer?.length,
+            mimetype: file.mimetype
+        });
+
+        try {
+            const result = await this.cloudinaryService.uploadFile(file);
+            console.log('Cloudinary upload success:', result.secure_url);
+            return {
+                url: result.secure_url,
+            };
+        } catch (error) {
+            console.error('Upload Error in Controller:', error.message);
+            console.error('Full Error:', error);
+            throw new BadRequestException(`Yükləmə xətası: ${error.message}`);
+        }
     }
 
     // Character Management Endpoints
