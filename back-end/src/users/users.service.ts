@@ -96,6 +96,7 @@ export class UsersService {
     reward: number,
     level: string,
     index: number,
+    body: any,
   ): Promise<{ user: User; addedReward: number; error?: string } | null> {
     const user = await this.userModel.findById(userId);
     if (!user) return null;
@@ -177,6 +178,9 @@ export class UsersService {
 
     if (isCorrect) {
       query.$set[`levelProgress.${level}`] = index;
+      if (body.stage) {
+        query.$set[`stageProgress.${level}:${body.stage}`] = index;
+      }
       if (!user.answeredQuestions.includes(questionId)) {
         if (!query.$push) query.$push = {};
         query.$push.answeredQuestions = questionId;

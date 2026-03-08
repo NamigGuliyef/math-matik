@@ -15,6 +15,7 @@ interface LandingStats {
     totalQuestions: number;
     totalCorrectAnswers: number;
     totalLevels: number;
+    totalStages: number;
 }
 
 const Home: React.FC = () => {
@@ -141,6 +142,11 @@ const Home: React.FC = () => {
                         <div className="stat-mini-card glass-card">
                             <div className="stat-icon-v2 icon-orange"><Zap /></div>
                             <h3>{loading ? '...' : stats?.totalLevels || 0}</h3>
+                            <span>Səviyyə</span>
+                        </div>
+                        <div className="stat-mini-card glass-card">
+                            <div className="stat-icon-v2 icon-pink"><Target /></div>
+                            <h3>{loading ? '...' : stats?.totalStages || 0}</h3>
                             <span>Mərhələ</span>
                         </div>
                     </div>
@@ -177,9 +183,9 @@ const Home: React.FC = () => {
                 <div className="container">
                     <div className="fighter-preview-card glass-card">
                         <div className="fighter-showcase-content">
-                            <div className="fighter-badge">
+                            {/* <div className="fighter-badge">
                                 <Sword size={16} /> <span>Yenilik: Döyüşçü Rejimi</span>
-                            </div>
+                            </div> */}
                             <h2>Riyaziyyatın <span className="text-gradient-v2">Qəhrəmanı Ol!</span></h2>
                             <p>
                                 Misalları həll et, qızıl qazan və öz döyüşçünü təkmilləşdir.
@@ -197,6 +203,10 @@ const Home: React.FC = () => {
                                 <div className="f-feature">
                                     <Flame size={20} color="#ef4444" />
                                     <span>Güclü Göstəricilər</span>
+                                </div>
+                                <div className="f-feature">
+                                    <Sword size={20} color="#f59e0b" />
+                                    <span>Döyüş Arenası</span>
                                 </div>
                             </div>
                             <Link to="/fighter" className="btn-main mt-2">

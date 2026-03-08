@@ -53,8 +53,17 @@ export class User extends Document {
   @Prop({ type: Map, of: Number, default: {} })
   levelProgress: Map<string, number>;
 
+  @Prop({ type: Map, of: Number, default: {} })
+  stageProgress: Map<string, number>; // level:stage -> question index
+
   @Prop({ default: 0 })
   sessionWrongAnswers: number;
+
+  @Prop({ type: [String], default: [] })
+  completedStages: string[]; // Format: "level:stage"
+
+  @Prop({ type: Map, of: Number, default: {} })
+  itemProgress: Map<string, number>; // itemId -> percentage (0-100)
 
   @Prop({ default: Date.now })
   lastActivity: Date;

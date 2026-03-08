@@ -14,9 +14,10 @@ interface Question {
 interface QuestionCardProps {
     question: Question;
     onAnswer: (isCorrect: boolean, selectedAnswer: string) => void;
+    stage?: string;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer }) => {
+const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, stage }) => {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
 
@@ -38,23 +39,23 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer }) => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="glass-card"
-            style={{ padding: '2rem', width: '100%', maxWidth: '700px', margin: '0 auto' }}
+            style={{ padding: '1.5rem', width: '100%', maxWidth: '700px', margin: '0 auto' }}
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Target size={16} /> {question.level.toUpperCase()}
+                    <Target size={15} /> {question.level.toUpperCase()} {stage && `| Mərhələ ${stage}`}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--warning)' }}>
-                    <Zap size={16} /> +{question.rewardAmount} AZN
+                    <Zap size={15} /> +{question.rewardAmount} AZN
                 </div>
             </div>
 
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '2rem', lineHeight: '1.4' }}>{question.text}</h3>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>{question.text}</h3>
 
-            <div style={{ display: 'grid', gap: '1rem' }}>
+            <div style={{ display: 'grid', gap: '0.8rem' }}>
                 {question.options.map((option, index) => {
                     let style: React.CSSProperties = {
-                        padding: '1.25rem',
+                        padding: '1rem 1.25rem',
                         borderRadius: '0.75rem',
                         border: '1px solid var(--border)',
                         background: 'rgba(255,255,255,0.03)',

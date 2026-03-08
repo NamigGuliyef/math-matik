@@ -14,6 +14,9 @@ interface User {
     quizStartTimes?: Record<string, string>; // Maps are serialized as objects in JSON
     restEndTimes?: Record<string, string>;
     levelProgress?: Record<string, number>;
+    stageProgress?: Record<string, number>;
+    completedStages?: string[];
+    itemProgress?: Record<string, number>;
     levelSessionWrongAnswers?: Record<string, number>;
     answeredQuestions?: string[];
 }

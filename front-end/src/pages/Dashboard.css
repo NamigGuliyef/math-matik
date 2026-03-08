@@ -274,8 +274,8 @@
 
 .g-hud-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.8rem;
     margin-bottom: 3rem;
 }
 
@@ -755,7 +755,13 @@
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+    .g-hud-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
     .g-hud-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -842,4 +848,182 @@
     .db-corner {
         display: none;
     }
+}
+
+/* ============================================================
+   STAGES VIEW
+   ============================================================ */
+
+.stages-container {
+    padding-bottom: 3rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.stage-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.4);
+    overflow: hidden;
+}
+
+.stage-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, var(--primary), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.stage-card:hover:not(.stage-card--locked) {
+    border-color: var(--primary);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(99, 102, 241, 0.2), 0 0 20px rgba(99, 102, 241, 0.1);
+    background: rgba(15, 23, 42, 0.7);
+}
+
+.stage-card:hover:not(.stage-card--locked)::before {
+    opacity: 0.1;
+}
+
+.stage-card--completed {
+    border-color: var(--success);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(34, 197, 94, 0.05));
+}
+
+.stage-card--completed .stage-card-icon {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+
+.stage-card--locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+    border-style: dashed;
+}
+
+.stage-card-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.stage-card:hover .stage-card-icon {
+    transform: rotate(5deg) scale(1.1);
+}
+
+.stage-card-info {
+    z-index: 1;
+}
+
+.stage-card-info h3 {
+    font-size: 1.25rem;
+    font-weight: 900;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+}
+
+.stage-card-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.stage-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #fff;
+    background: var(--success);
+    padding: 3px 10px;
+    border-radius: 100px;
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+    text-transform: uppercase;
+}
+
+/* ============================================================
+   RPG COMPONENTS
+   ============================================================ */
+
+.btn-rpg {
+    position: relative;
+    padding: 1rem 2rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid var(--n-color, var(--primary));
+    color: var(--n-color, var(--primary));
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px rgba(var(--n-color-rgb, 99, 102, 241), 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    text-decoration: none;
+}
+
+.btn-rpg:hover {
+    background: var(--n-color, var(--primary));
+    color: #fff;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(var(--n-color-rgb, 99, 102, 241), 0.4);
+}
+
+.btn-rpg--outline {
+    background: transparent;
+}
+
+.btn-rpg--outline:hover {
+    background: rgba(var(--n-color-rgb, 99, 102, 241), 0.1);
+    color: var(--n-color, var(--primary));
+}
+
+.rpg-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: block;
 }

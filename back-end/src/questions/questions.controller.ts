@@ -11,6 +11,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
+import { QuizService } from './quiz.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { ChatService } from '../chat/chat.service';
@@ -22,6 +23,7 @@ import { ActivityType } from '../activity/schemas/activity.schema';
 export class QuestionsController {
   constructor(
     private questionsService: QuestionsService,
+    private quizService: QuizService,
     private usersService: UsersService,
     private activityService: ActivityService,
     private chatService: ChatService,
@@ -47,6 +49,16 @@ export class QuestionsController {
     return this.questionsService.getLevelQuestionCounts();
   }
 
+  @Get('stages')
+  async getStages(@Query('level') level: string) {
+    return this.questionsService.getStagesByLevel(level);
+  }
+
+  @Get('by-stage')
+  async getByStage(@Query('level') level: string, @Query('stage') stage: string) {
+    return this.questionsService.findByLevelAndStage(level, Number(stage) || 1);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('start')
   async startQuiz(@Request() req: any, @Body('level') level: string) {
@@ -70,6 +82,7 @@ export class QuestionsController {
       question.rewardAmount,
       level,
       index,
+      body,
     );
 
     // Log activity
@@ -100,6 +113,12 @@ export class QuestionsController {
   @Get('status')
   async getStatus(@Request() req: any) {
     return this.usersService.findById(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('complete-stage')
+  async completeStage(@Request() req: any, @Body() body: { level: string; stage: number }) {
+    return this.quizService.completeStage(req.user.userId, body.level, body.stage);
   }
 
   @Get('landing-stats')

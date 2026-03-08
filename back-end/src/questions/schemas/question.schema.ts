@@ -17,6 +17,9 @@ export class Question extends Document {
 
   @Prop({ required: true, default: 0.001 })
   rewardAmount: number;
+
+  @Prop({ required: true, default: 1 })
+  stage: number;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);

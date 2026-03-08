@@ -12,7 +12,9 @@ import {
     Sword,
     User as UserIcon,
     X,
-    Zap
+    Zap,
+    Play,
+    Loader2
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -85,6 +87,14 @@ const Fighter: React.FC = () => {
     const [shopCharacters, setShopCharacters] = useState<Character[]>([]);
     const [balance, setBalance] = useState<number>(user?.balance || 0);
     const [loading, setLoading] = useState(true);
+
+    // Battle states
+    const [isBattling, setIsBattling] = useState(false);
+    const [battleData, setBattleData] = useState<any>(null);
+    const [battleRounds, setBattleRounds] = useState<any[]>([]);
+    const [battleResult, setBattleResult] = useState<any>(null);
+    const [matchingOpponent, setMatchingOpponent] = useState(false);
+    const [hp, setHp] = useState({ user: 100, opponent: 100 });
 
     const allStatLabels: Record<string, string> = {
         can: 'HP',
@@ -266,6 +276,61 @@ const Fighter: React.FC = () => {
         }
     };
 
+    const handleStartBattle = async () => {
+        try {
+            setMatchingOpponent(true);
+            setIsBattling(true);
+            setBattleRounds([]);
+            setBattleResult(null);
+            setHp({ user: 100, opponent: 100 });
+
+            const resp = await axios.post(`${API_BASE_CLEAN}/fighter/battle/start`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setBattleData(resp.data);
+            setMatchingOpponent(false);
+
+            // Start simulation
+            runBattleSimulation(resp.data);
+        } catch (err: any) {
+            setIsBattling(false);
+            setMatchingOpponent(false);
+            showNotification(err.response?.data?.message || 'Döyüş başlana bilmədi', 'error');
+        }
+    };
+
+    const runBattleSimulation = (data: any) => {
+        const rounds = data.battle.rounds;
+        let idx = 0;
+
+        const interval = setInterval(() => {
+            if (idx >= rounds.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    setBattleResult(data);
+                    if (data.newBalance !== undefined) {
+                        setBalance(data.newBalance);
+                    }
+                    fetchFighterData();
+                }, 1000);
+                return;
+            }
+
+            const currentRound = rounds[idx];
+            setBattleRounds(prev => [...prev, currentRound]);
+
+            // Update HPs
+            if (currentRound.attacker === 'Sən') {
+                setHp(prev => ({ ...prev, opponent: currentRound.defenderHp }));
+            } else {
+                setHp(prev => ({ ...prev, user: currentRound.defenderHp }));
+            }
+
+            idx++;
+        }, 800);
+    };
+
     if (loading) return <div className="fighter-container"></div>;
 
     return (
@@ -289,6 +354,9 @@ const Fighter: React.FC = () => {
                     onClick={() => setActiveTab('shop')}
                 >
                     Mağaza
+                </button>
+                <button className="start-battle-btn" onClick={handleStartBattle} disabled={isBattling}>
+                    <Play size={16} /> Döyüşə Başla
                 </button>
             </div>
 
@@ -480,6 +548,81 @@ const Fighter: React.FC = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Battle Arena Modal */}
+            {isBattling && (
+                <div className="battle-overlay">
+                    <div className="battle-arena">
+                        <button className="close-battle-btn" onClick={() => setIsBattling(false)} disabled={!battleResult}>
+                            <X size={24} />
+                        </button>
+
+                        {matchingOpponent ? (
+                            <div className="matchmaking-view">
+                                <Loader2 className="spinning-loader" size={64} />
+                                <h3>Rəqib axtarılır...</h3>
+                                <p>Gücünüzə uyğun balanslı rəqib seçilir.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="battle-header">
+                                    <div className="fighter-profile user-side">
+                                        <div className="fighter-name-tag">Sən</div>
+                                        <div className="hp-bar-container">
+                                            <div className="hp-bar-fill" style={{ width: `${(hp.user / (battleData?.userStats?.can || 100)) * 100}%` }}></div>
+                                            <span className="hp-text">{Math.max(0, hp.user).toFixed(0)} / {battleData?.userStats?.can}</span>
+                                        </div>
+                                        <div className="battle-avatar">
+                                            {equipped.character ? (
+                                                <img src={getImageUrl(equipped.character.characterId?.image)} alt="User" />
+                                            ) : (
+                                                <UserIcon size={80} />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="battle-vs">VS</div>
+
+                                    <div className="fighter-profile opponent-side">
+                                        <div className="fighter-name-tag">{battleData?.opponentName}</div>
+                                        <div className="hp-bar-container">
+                                            <div className="hp-bar-fill" style={{ width: `${(hp.opponent / (battleData?.opponentStats?.can || 100)) * 100}%` }}></div>
+                                            <span className="hp-text">{Math.max(0, hp.opponent).toFixed(0)} / {battleData?.opponentStats?.can}</span>
+                                        </div>
+                                        <div className="battle-avatar">
+                                            <UserIcon size={80} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="battle-logs" id="battle-logs">
+                                    {battleRounds.map((r, i) => (
+                                        <div key={i} className={`log-entry ${r.attacker === 'Sən' ? 'player-atk' : 'opp-atk'}`}>
+                                            <span className="round-num">Raund {r.round}:</span>
+                                            <span className="atk-name">{r.attacker}</span>
+                                            <span className="atk-action">hücum etdi - </span>
+                                            <span className="atk-dmg">{r.damage} zərər!</span>
+                                        </div>
+                                    ))}
+                                    <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })}></div>
+                                </div>
+
+                                {battleResult && (
+                                    <div className="battle-result-overlay">
+                                        <div className={`result-card ${battleResult.isUserWinner ? 'win' : 'lose'}`}>
+                                            <h2>{battleResult.isUserWinner ? 'QALİB!' : 'MƏĞLUB!'}</h2>
+                                            <p className="reward-text">
+                                                Mükafat: <span>+{battleResult.isUserWinner ? battleResult.battle?.rewards?.winnerAmount ?? 0.5 : battleResult.battle?.rewards?.loserAmount ?? 0.1} AZN</span>
+                                            </p>
+                                            <button className="finish-battle-btn" onClick={() => setIsBattling(false)}>Bağla</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
             )}

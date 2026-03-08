@@ -1,7 +1,19 @@
 import React, { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, AlertCircle, PlayCircle, Star, Lock, CheckCircle, Zap, Shield, Sword } from 'lucide-react';
+import {
+    Trophy,
+    AlertCircle,
+    PlayCircle,
+    Star,
+    Lock,
+    CheckCircle,
+    Zap,
+    Shield,
+    Sword,
+    ArrowLeft,
+    Loader2
+} from 'lucide-react';
 import api from '../api/client';
 import RulesModal from '../components/RulesModal';
 import { useNavigate } from 'react-router-dom';
@@ -104,7 +116,7 @@ const zigzag = [0, 1, 0, -1, 0, 1];
 const XpBar: React.FC<{ pct: number; color: string; done: number; total: number; delay: number }> = ({ pct, color, done, total, delay }) => (
     <div className="g-xp-wrap">
         <div className="g-xp-labels">
-            <span className="g-xp-label">XP</span>
+            <span className="g-xp-label">Mərhələ {done + 1}</span>
             <span className="g-xp-count">{done} / {total || '?'}</span>
         </div>
         <div className="g-xp-track">
@@ -128,9 +140,12 @@ const XpBar: React.FC<{ pct: number; color: string; done: number; total: number;
 const Dashboard: React.FC = () => {
     const { user, updateUser } = useAuth();
     const [availableLevels, setAvailableLevels] = React.useState<string[]>([]);
-    const [levelCounts, setLevelCounts] = React.useState<Record<string, number>>({});
+    const [levelCounts, setLevelCounts] = React.useState<Record<string, { totalQuestions: number; totalStages: number }>>({});
     const [isRulesModalOpen, setIsRulesModalOpen] = React.useState(false);
     const [selectedLevel, setSelectedLevel] = React.useState<string | null>(null);
+    const [showStagesLevel, setShowStagesLevel] = React.useState<string | null>(null);
+    const [levelStages, setLevelStages] = React.useState<any[]>([]);
+    const [loadingStages, setLoadingStages] = React.useState(false);
     const navigate = useNavigate();
     const isStudent = user?.role === 'student';
 
@@ -153,9 +168,9 @@ const Dashboard: React.FC = () => {
     }, []);
 
     const isLevelCompleted = (level: string) => {
-        const total = levelCounts[level];
-        if (!total) return false;
-        return (user?.levelProgress?.[level] ?? 0) >= total;
+        const stats = levelCounts[level];
+        if (!stats) return false;
+        return (user?.levelProgress?.[level] ?? 0) >= stats.totalQuestions;
     };
     const isLevelAccessible = (level: string, index: number) => {
         if (!availableLevels.includes(level)) return false;
@@ -164,30 +179,55 @@ const Dashboard: React.FC = () => {
         return isLevelCompleted(LEVELS[index - 1]);
     };
     const getLevelProgress = (level: string) => {
-        const total = levelCounts[level] || 0;
-        const done = user?.levelProgress?.[level] ?? 0;
-        return total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+        const stats = levelCounts[level];
+        if (!stats) return 0;
+
+        // Calculate based on completed stages
+        const completedStagesCount = user?.completedStages?.filter(s => s.startsWith(`${level}:`)).length || 0;
+        const totalStages = stats.totalStages || 1;
+
+        return Math.min(100, Math.round((completedStagesCount / totalStages) * 100));
     };
-    const getStarCount = (level: string) => {
-        const p = getLevelProgress(level);
-        return p >= 100 ? 3 : p >= 60 ? 2 : p >= 30 ? 1 : 0;
-    };
+
     const currentLevelIndex = LEVELS.findIndex((l, i) => isLevelAccessible(l, i) && !isLevelCompleted(l));
 
     const completedCount = LEVELS.filter((l) => isLevelCompleted(l)).length;
     const overallPct = Math.round((completedCount / LEVELS.length) * 100);
 
-    const handleLevelStart = (level: string) => {
-        if (sessionStorage.getItem(`skipRules_${level}`) === 'true') { navigate(`/quiz/${level}`); return; }
-        setSelectedLevel(level); setIsRulesModalOpen(true);
+    const handleLevelStart = async (level: string) => {
+        setShowStagesLevel(level);
+        setLoadingStages(true);
+        try {
+            const res = await api.get(`/questions/stages?level=${level}`);
+            setLevelStages(res.data);
+        } catch (err) {
+            console.error('Error fetching stages:', err);
+        } finally {
+            setLoadingStages(false);
+        }
     };
     const handleConfirmStart = (dontShowAgain: boolean) => {
         if (selectedLevel) {
             if (dontShowAgain) sessionStorage.setItem(`skipRules_${selectedLevel}`, 'true');
-            navigate(`/quiz/${selectedLevel}`);
+            // Extract the actual level from "levelN:stageM" if needed, but here it's just level
+            const [level, stage] = selectedLevel.split(':');
+            navigate(`/quiz/${level}/${stage}`);
         }
         setIsRulesModalOpen(false);
     };
+
+    const handleStageClick = (level: string, stage: number, isAccessible: boolean) => {
+        if (!isAccessible) return;
+        const stageId = `${level}:${stage}`;
+        if (sessionStorage.getItem(`skipRules_${stageId}`) === 'true') {
+            navigate(`/quiz/${level}/${stage}`);
+            return;
+        }
+        setSelectedLevel(stageId);
+        setIsRulesModalOpen(true);
+    };
+
+    const currentStageNum = (user?.completedStages?.filter(s => s.startsWith(`${user?.level || 'level1'}:`)).length || 0) + 1;
 
     /* HUD stat cards */
     const hudStats = [
@@ -195,6 +235,7 @@ const Dashboard: React.FC = () => {
         { label: 'SƏHV', value: user?.wrongAnswers || 0, icon: <AlertCircle size={20} />, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
         { label: 'BALANS', value: `${Number(user?.balance || 0).toFixed(2)} ₼`, icon: <Star size={20} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
         { label: 'RANK', value: user?.level?.toUpperCase() || 'LVL 1', icon: <Shield size={20} />, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+        { label: 'MƏRHƏLƏ', value: currentStageNum, icon: <Zap size={20} />, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
     ];
 
     return (
@@ -244,7 +285,7 @@ const Dashboard: React.FC = () => {
                                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
                             />
                         </div>
-                        <span className="g-overall-sub">{completedCount} / {LEVELS.length} Mərhələ tamamlandı</span>
+                        <span className="g-overall-sub">{completedCount} / {LEVELS.length} Səviyyə tamamlandı</span>
                     </div>
                 </motion.div>
 
@@ -278,186 +319,226 @@ const Dashboard: React.FC = () => {
                     <div className="g-section-line" />
                     <h2 className="g-section-title">
                         <Zap size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-                        MƏRHƏLƏ XƏRİTƏSİ
+                        {showStagesLevel ? `${levelMeta[LEVELS.indexOf(showStagesLevel)].title} - MƏRHƏLƏLƏR` : 'SƏVİYYƏ XƏRİTƏSİ'}
                     </h2>
                     <div className="g-section-line" />
                 </div>
 
-                <div className="level-journey">
-                    {LEVELS.map((level, index) => {
-                        const isAvailable = availableLevels.includes(level);
-                        const accessible = isLevelAccessible(level, index);
-                        const completed = isLevelCompleted(level);
-                        const locked = isAvailable && isStudent && !accessible;
-                        const notInDb = !isAvailable;
-                        const isCurrent = index === currentLevelIndex && accessible;
-                        const progress = getLevelProgress(level);
-                        const stars = getStarCount(level);
-                        const meta = levelMeta[index];
-                        const zz = zigzag[index];
+                {showStagesLevel ? (
+                    <div className="stages-container">
+                        <motion.button
+                            className="btn-rpg"
+                            onClick={() => setShowStagesLevel(null)}
+                            style={{ marginBottom: '2rem', padding: '0.6rem 1.2rem', fontSize: '0.85rem', '--n-color': 'var(--text-muted)' } as any}
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <ArrowLeft size={16} /> Geri qayıt
+                        </motion.button>
 
-                        return (
-                            <div
-                                key={level}
-                                className={`level-journey-row ${zz === 1 ? 'row-right' : zz === -1 ? 'row-left' : 'row-center'}`}
-                            >
-                                {index > 0 && (
-                                    <div className={`journey-connector ${accessible || completed ? 'connector-active' : ''}`}
-                                        style={accessible || completed ? { '--c-color': meta.color } as any : {}} />
-                                )}
+                        <div className="stages-grid">
+                            {loadingStages ? (
+                                <div style={{ textAlign: 'center', width: '100%', padding: '3rem' }}>
+                                    <Loader2 className="animate-spin" size={40} color="var(--primary)" />
+                                </div>
+                            ) : levelStages.length > 0 ? (
+                                levelStages.map((s, idx) => {
+                                    const stageId = `${showStagesLevel}:${s.stage}`;
+                                    const isCompleted = user?.completedStages?.includes(stageId);
+                                    // Accessible if it's stage 1, or if previous stage is completed
+                                    const prevStageId = idx > 0 ? `${showStagesLevel}:${levelStages[idx - 1].stage}` : null;
+                                    const isAccessible = idx === 0 || (user?.completedStages?.includes(prevStageId!) ?? false);
 
-                                <motion.div
-                                    className="level-node-wrap"
-                                    initial={{ opacity: 0, scale: 0.75 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: index * 0.13, type: 'spring', stiffness: 220, damping: 22 }}
+                                    return (
+                                        <motion.div
+                                            key={s.stage}
+                                            className={`stage-card glass-card ${isCompleted ? 'stage-card--completed' : ''} ${!isAccessible ? 'stage-card--locked' : ''}`}
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            onClick={() => handleStageClick(showStagesLevel!, s.stage, isAccessible)}
+                                        >
+                                            <div className="stage-card-icon">
+                                                {isCompleted ? <CheckCircle size={24} color="var(--success)" /> : !isAccessible ? <Lock size={24} color="var(--text-muted)" /> : <PlayCircle size={24} color="var(--primary)" />}
+                                            </div>
+                                            <div className="stage-card-info">
+                                                <h3>Mərhələ {s.stage}</h3>
+                                                <p>{s.totalQuestions} sual</p>
+                                            </div>
+                                            {isCompleted && <span className="stage-badge">TAMAMLANDI</span>}
+                                        </motion.div>
+                                    );
+                                })
+                            ) : (
+                                <div style={{ textAlign: 'center', width: '100%', color: 'var(--text-muted)' }}>
+                                    Bu level üçün hələ ki mərhələ yoxdur.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="level-journey">
+                        {LEVELS.map((level, index) => {
+                            const isAvailable = availableLevels.includes(level);
+                            const accessible = isLevelAccessible(level, index);
+                            const completed = isLevelCompleted(level);
+                            const locked = isAvailable && isStudent && !accessible;
+                            const notInDb = !isAvailable;
+                            const isCurrent = index === currentLevelIndex && accessible;
+                            const progress = getLevelProgress(level);
+
+                            const meta = levelMeta[index];
+                            const zz = zigzag[index];
+
+                            return (
+                                <div
+                                    key={level}
+                                    className={`level-journey-row ${zz === 1 ? 'row-right' : zz === -1 ? 'row-left' : 'row-center'}`}
                                 >
-                                    {/* Pulse ring */}
-                                    {isCurrent && (
-                                        <div className="level-current-pulse" style={{ background: meta.glow }} />
+                                    {index > 0 && (
+                                        <div className={`journey-connector ${accessible || completed ? 'connector-active' : ''}`}
+                                            style={accessible || completed ? { '--c-color': meta.color } as any : {}} />
                                     )}
 
                                     <motion.div
-                                        className={`level-node glass-card
-                                            ${completed ? 'level-node--completed' : ''}
-                                            ${isCurrent ? 'level-node--current' : ''}
-                                            ${locked || notInDb ? 'level-node--locked' : ''}
-                                        `}
-                                        style={{
-                                            borderColor: completed || isCurrent ? meta.color : undefined,
-                                            boxShadow: completed
-                                                ? `0 0 30px ${meta.glow}, inset 0 1px 0 ${meta.color}55`
-                                                : isCurrent
-                                                    ? `0 0 24px ${meta.glow}, inset 0 1px 0 ${meta.color}33`
-                                                    : undefined,
-                                        }}
-                                        whileHover={accessible ? { scale: 1.025, y: -5 } : {}}
-                                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                        onClick={() => accessible && handleLevelStart(level)}
+                                        className="level-node-wrap"
+                                        initial={{ opacity: 0, scale: 0.75 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: index * 0.13, type: 'spring', stiffness: 220, damping: 22 }}
                                     >
-                                        {/* Animated neon border on hover / current */}
-                                        {(isCurrent || completed) && (
-                                            <div className="g-neon-border" style={{ '--n-color': meta.color } as any} />
-                                        )}
-
-                                        {/* ── Top row ── */}
-                                        <div className="level-node-top">
-                                            <div className="g-level-badge-wrap">
-                                                {/* Rank chip */}
-                                                <span className="g-rank-chip" style={{ color: meta.color, borderColor: `${meta.color}44`, background: `${meta.color}15` }}>
-                                                    {meta.rank}
-                                                </span>
-                                                {/* Number badge */}
-                                                <div className="level-num-badge" style={{
-                                                    background: accessible ? `linear-gradient(135deg, ${meta.color}, ${meta.color}99)` : 'var(--surface)',
-                                                    boxShadow: accessible ? `0 0 12px ${meta.glow}` : 'none',
-                                                    opacity: accessible ? 1 : 0.45,
-                                                }}>
-                                                    {completed ? <CheckCircle size={16} color="white" />
-                                                        : locked || notInDb ? <Lock size={14} color="var(--text-muted)" />
-                                                            : <span style={{ color: 'white', fontWeight: 900, fontSize: '0.85rem' }}>0{index + 1}</span>}
-                                                </div>
-                                            </div>
-
-                                            {/* Stars */}
-                                            <div className="level-stars">
-                                                {[0, 1, 2].map(s => (
-                                                    <motion.span key={s}
-                                                        animate={stars > s ? { scale: [1, 1.5, 1], rotate: [0, 15, 0] } : {}}
-                                                        transition={{ delay: s * 0.15, duration: 0.4 }}
-                                                    >
-                                                        <Star size={15}
-                                                            fill={s < stars ? '#f59e0b' : 'none'}
-                                                            color={s < stars ? '#f59e0b' : 'rgba(255,255,255,0.18)'}
-                                                            style={{ filter: s < stars ? 'drop-shadow(0 0 5px #f59e0b)' : 'none' }}
-                                                        />
-                                                    </motion.span>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* ── Body ── */}
-                                        <div className="level-node-body">
-                                            <div className="level-icon-wrap" style={{
-                                                background: accessible ? `linear-gradient(135deg, ${meta.color}2a, ${meta.color}0d)` : 'rgba(255,255,255,0.03)',
-                                                border: `1px solid ${accessible ? meta.color + '44' : 'rgba(255,255,255,0.05)'}`,
-                                                boxShadow: accessible ? `inset 0 0 20px ${meta.color}22` : 'none',
-                                            }}>
-                                                <span className="level-icon" style={{ filter: accessible ? 'none' : 'grayscale(1)' }}>
-                                                    {meta.icon}
-                                                </span>
-                                            </div>
-                                            <div className="level-info">
-                                                <div className="level-label">Mərhələ {index + 1}</div>
-                                                <h3 className="level-title" style={{ color: accessible ? 'var(--text)' : 'var(--text-muted)' }}>
-                                                    {meta.title}
-                                                </h3>
-                                                <p className="level-desc">{meta.description}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* ── XP bar ── */}
-                                        {isAvailable && accessible && (
-                                            <XpBar
-                                                pct={progress}
-                                                color={meta.color}
-                                                done={user?.levelProgress?.[level] ?? 0}
-                                                total={levelCounts[level] || 0}
-                                                delay={index * 0.15}
-                                            />
-                                        )}
-
-                                        {/* ── Action ── */}
-                                        <div className="level-action">
-                                            {accessible ? (
-                                                <motion.button
-                                                    className="g-play-btn"
-                                                    style={{
-                                                        background: `linear-gradient(135deg, ${meta.color}, ${meta.color}bb)`,
-                                                        boxShadow: `0 4px 20px ${meta.glow}, inset 0 1px 0 rgba(255,255,255,0.2)`,
-                                                    }}
-                                                    whileHover={{ scale: 1.05, boxShadow: `0 8px 32px ${meta.glow}` }}
-                                                    whileTap={{ scale: 0.96 }}
-                                                    onClick={e => { e.stopPropagation(); handleLevelStart(level); }}
-                                                >
-                                                    {completed ? <><Zap size={15} /> Yenidən Oyna</>
-                                                        : isCurrent ? <><PlayCircle size={15} /> İndi Başla</>
-                                                            : <><PlayCircle size={15} /> Davam Et</>}
-                                                </motion.button>
-                                            ) : locked ? (
-                                                <div className="level-locked-msg">
-                                                    <Lock size={13} /> Əvvəlki mərhələni bitir
-                                                </div>
-                                            ) : (
-                                                <div className="level-locked-msg">⏳ Tezliklə</div>
-                                            )}
-                                        </div>
-
-                                        {/* "CARİ" beacon */}
+                                        {/* Pulse ring */}
                                         {isCurrent && (
-                                            <motion.div
-                                                className="level-current-badge"
-                                                animate={{ opacity: [1, 0.6, 1] }}
-                                                transition={{ duration: 1.4, repeat: Infinity }}
-                                                style={{ background: meta.color }}
-                                            >
-                                                <Zap size={10} /> CARİ
-                                            </motion.div>
+                                            <div className="level-current-pulse" style={{ background: meta.glow }} />
                                         )}
 
-                                        {/* Completed overlay stamp */}
-                                        {completed && (
-                                            <div className="g-completed-stamp">
-                                                <CheckCircle size={13} style={{ marginRight: 4 }} />
-                                                TAMAMLANDI
+                                        <motion.div
+                                            className={`level-node glass-card
+                                                ${completed ? 'level-node--completed' : ''}
+                                                ${isCurrent ? 'level-node--current' : ''}
+                                                ${locked || notInDb ? 'level-node--locked' : ''}
+                                            `}
+                                            style={{
+                                                borderColor: completed || isCurrent ? meta.color : undefined,
+                                                boxShadow: completed
+                                                    ? `0 0 30px ${meta.glow}, inset 0 1px 0 ${meta.color}55`
+                                                    : isCurrent
+                                                        ? `0 0 24px ${meta.glow}, inset 0 1px 0 ${meta.color}33`
+                                                        : undefined,
+                                            }}
+                                            whileHover={accessible ? { scale: 1.025, y: -5 } : {}}
+                                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                                            onClick={() => accessible && handleLevelStart(level)}
+                                        >
+                                            {/* Animated neon border on hover / current */}
+                                            {(isCurrent || completed) && (
+                                                <div className="g-neon-border" style={{ '--n-color': meta.color } as any} />
+                                            )}
+
+                                            {/* ── Top row ── */}
+                                            <div className="level-node-top">
+                                                <div className="g-level-badge-wrap">
+                                                    {/* Rank chip */}
+                                                    <span className="g-rank-chip" style={{ color: meta.color, borderColor: `${meta.color}44`, background: `${meta.color}15` }}>
+                                                        {meta.rank}
+                                                    </span>
+                                                    {/* Number badge */}
+                                                    <div className="level-num-badge" style={{
+                                                        background: accessible ? `linear-gradient(135deg, ${meta.color}, ${meta.color}99)` : 'var(--surface)',
+                                                        boxShadow: accessible ? `0 0 12px ${meta.glow}` : 'none',
+                                                        opacity: accessible ? 1 : 0.45,
+                                                    }}>
+                                                        {completed ? <CheckCircle size={16} color="white" />
+                                                            : locked || notInDb ? <Lock size={14} color="var(--text-muted)" />
+                                                                : <span style={{ color: 'white', fontWeight: 900, fontSize: '0.85rem' }}>0{index + 1}</span>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Stars removed as requested */}
                                             </div>
-                                        )}
+
+                                            {/* ── Body ── */}
+                                            <div className="level-node-body">
+                                                <div className="level-icon-wrap" style={{
+                                                    background: accessible ? `linear-gradient(135deg, ${meta.color}2a, ${meta.color}0d)` : 'rgba(255,255,255,0.03)',
+                                                    border: `1px solid ${accessible ? meta.color + '44' : 'rgba(255,255,255,0.05)'}`,
+                                                    boxShadow: accessible ? `inset 0 0 20px ${meta.color}22` : 'none',
+                                                }}>
+                                                    <span className="level-icon" style={{ filter: accessible ? 'none' : 'grayscale(1)' }}>
+                                                        {meta.icon}
+                                                    </span>
+                                                </div>
+                                                <div className="level-info">
+                                                    <div className="level-label">Səviyyə {index + 1}</div>
+                                                    <h3 className="level-title" style={{ color: accessible ? 'var(--text)' : 'var(--text-muted)' }}>
+                                                        {meta.title}
+                                                    </h3>
+                                                    <p className="level-desc">{meta.description}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* ── Progress bar ── */}
+                                            {isAvailable && accessible && (
+                                                <XpBar
+                                                    pct={progress}
+                                                    color={meta.color}
+                                                    done={user?.completedStages?.filter(s => s.startsWith(`${level}:`)).length || 0}
+                                                    total={levelCounts[level]?.totalStages || 0}
+                                                    delay={index * 0.15}
+                                                />
+                                            )}
+
+                                            {/* ── Action ── */}
+                                            <div className="level-action">
+                                                {accessible ? (
+                                                    <motion.button
+                                                        className="g-play-btn"
+                                                        style={{
+                                                            background: `linear-gradient(135deg, ${meta.color}, ${meta.color}bb)`,
+                                                            boxShadow: `0 4px 20px ${meta.glow}, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                                                        }}
+                                                        whileHover={{ scale: 1.05, boxShadow: `0 8px 32px ${meta.glow}` }}
+                                                        whileTap={{ scale: 0.96 }}
+                                                        onClick={e => { e.stopPropagation(); handleLevelStart(level); }}
+                                                    >
+                                                        {completed ? <><Zap size={15} /> Yenidən Oyna</>
+                                                            : isCurrent ? <><PlayCircle size={15} /> İndi Başla</>
+                                                                : <><PlayCircle size={15} /> Davam Et</>}
+                                                    </motion.button>
+                                                ) : locked ? (
+                                                    <div className="level-locked-msg">
+                                                        <Lock size={13} /> Əvvəlki mərhələni bitir
+                                                    </div>
+                                                ) : (
+                                                    <div className="level-locked-msg">⏳ Tezliklə</div>
+                                                )}
+                                            </div>
+
+                                            {/* "CARİ" beacon */}
+                                            {isCurrent && (
+                                                <motion.div
+                                                    className="level-current-badge"
+                                                    animate={{ opacity: [1, 0.6, 1] }}
+                                                    transition={{ duration: 1.4, repeat: Infinity }}
+                                                    style={{ background: meta.color }}
+                                                >
+                                                    <Zap size={10} /> CARİ
+                                                </motion.div>
+                                            )}
+
+                                            {/* Completed overlay stamp */}
+                                            {completed && (
+                                                <div className="g-completed-stamp">
+                                                    <CheckCircle size={13} style={{ marginRight: 4 }} />
+                                                    TAMAMLANDI
+                                                </div>
+                                            )}
+                                        </motion.div>
                                     </motion.div>
-                                </motion.div>
-                            </div>
-                        );
-                    })}
-                </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             <RulesModal

@@ -3,22 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/client';
 import QuestionCard from '../components/QuestionCard';
-import { Loader2, Trophy, ArrowLeft, Timer, Clock } from 'lucide-react';
+import { Loader2, Trophy, ArrowLeft, Timer, Clock, Zap, Gift } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
 
 
 const Quiz: React.FC = () => {
-    const { level } = useParams<{ level: string }>();
+    const { level, stage } = useParams<{ level: string, stage: string }>();
     const [questions, setQuestions] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [showFinished, setShowFinished] = useState(false);
+    const [stageReward, setStageReward] = useState<any>(null);
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const [isRestingState, setIsRestingState] = useState(false);
     const [restTimeLeft, setRestTimeLeft] = useState<number | null>(null);
+    const [isChestOpen, setIsChestOpen] = useState(false);
 
     const timerRef = useRef<any>(null);
     const navigate = useNavigate();
@@ -76,8 +78,12 @@ const Quiz: React.FC = () => {
             }
 
             try {
+                const questionsUrl = stage
+                    ? `/questions/by-stage?level=${level}&stage=${stage}`
+                    : `/questions/by-level?level=${level}`;
+
                 const [qRes, startRes] = await Promise.all([
-                    api.get(`/questions/by-level?level=${level}`),
+                    api.get(questionsUrl),
                     api.post('/questions/start', { level })
                 ]);
 
@@ -102,16 +108,23 @@ const Quiz: React.FC = () => {
                 setQuestions(allQuestions);
                 updateUser(updatedUser);
 
-                // Load progress based on answeredQuestions IDs
+                // Load progress based on stageProgress or answeredQuestions
                 const answeredIds = updatedUser.answeredQuestions || [];
                 let progressIndex = 0;
 
-                // Find how many of the fetched questions are already answered
-                for (let i = 0; i < allQuestions.length; i++) {
-                    if (answeredIds.includes(allQuestions[i]._id)) {
-                        progressIndex = i + 1;
-                    } else {
-                        break; // Stop at the first unanswered question
+                const stageKey = `${level}:${stage}`;
+                const savedStageProgress = updatedUser.stageProgress?.[stageKey];
+
+                if (stage && savedStageProgress !== undefined) {
+                    progressIndex = savedStageProgress;
+                } else {
+                    // Fallback to searching answered questions if no stageProgress is found
+                    for (let i = 0; i < allQuestions.length; i++) {
+                        if (answeredIds.includes(allQuestions[i]._id)) {
+                            progressIndex = i + 1;
+                        } else {
+                            break;
+                        }
                     }
                 }
 
@@ -222,7 +235,8 @@ const Quiz: React.FC = () => {
                 const response = await api.post(`/questions/answer/${questions[currentIndex]._id}`, {
                     answer: selectedAnswer,
                     level,
-                    index: isCorrect ? currentIndex + 1 : currentIndex
+                    index: isCorrect ? currentIndex + 1 : currentIndex,
+                    stage: stage ? Number(stage) : undefined
                 });
 
                 if (response.data.error === 'TIME_UP' || response.data.error === 'REST_PERIOD' || response.data.error === 'OUT_OF_CHANCES') {
@@ -242,6 +256,24 @@ const Quiz: React.FC = () => {
                     if (currentIndex < questions.length - 1) {
                         setCurrentIndex(prev => prev + 1);
                     } else {
+                        if (stage) {
+                            // Stage completion
+                            try {
+                                const res = await api.post('/questions/complete-stage', {
+                                    level,
+                                    stage: Number(stage)
+                                });
+                                console.log('Stage completion response:', res.data);
+                                setStageReward(res.data.reward);
+                                setIsChestOpen(false); // Reset for new stage
+
+                                // Refresh user data to get updated completedStages and progress
+                                const statusRes = await api.get('/questions/status');
+                                updateUser(statusRes.data);
+                            } catch (err) {
+                                console.error('Error completing stage:', err);
+                            }
+                        }
                         setShowFinished(true);
                     }
                 }
@@ -293,19 +325,114 @@ const Quiz: React.FC = () => {
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     className="glass-card"
-                    style={{ padding: '4rem', maxWidth: '600px', margin: '0 auto' }}
+                    style={{ padding: '1.5rem', maxWidth: '400px', margin: '0 auto', position: 'relative', overflow: 'hidden', border: '1px solid var(--warning)' }}
                 >
-                    <Trophy size={80} color="var(--warning)" style={{ marginBottom: '2rem' }} />
-                    <h1 className="gradient-text" style={{ fontSize: '3rem', marginBottom: '1rem' }}>Təbriklər!</h1>
-                    <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '2.5rem' }}>
-                        {level?.toUpperCase()} mərhələsini tamamladınız.
+                    {/* Background glow for victory */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, var(--warning) 0%, transparent 70%)', opacity: 0.1, pointerEvents: 'none' }} />
+
+                    <Trophy size={40} color="var(--warning)" style={{ marginBottom: '1rem' }} />
+                    <h1 className="gradient-text" style={{ fontSize: '1.8rem', marginBottom: '0.25rem', fontWeight: 900 }}>ƏHSƏN!</h1>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.2rem' }}>
+                        {stage ? `Səviyyə ${level?.replace('level', '')} - Mərhələ ${stage} tamamlandı!` : `Səviyyə ${level?.replace('level', '')} tamamlandı!`}
                     </p>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '3rem' }}>
-                        Qazanılan: <span style={{ color: 'var(--success)' }}>+{score} AZN</span>
+
+                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '1rem', marginBottom: '1.2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.1rem', fontWeight: 600 }}>CƏM QAZANC:</div>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--success)', textShadow: '0 0 15px rgba(34, 197, 94, 0.4)' }}>
+                            +{score.toFixed(2)} AZN
+                        </div>
                     </div>
-                    <button className="btn btn-primary" onClick={() => navigate('/dashboard')} style={{ padding: '1rem 3rem' }}>
-                        Dashboard-a Qayıt
-                    </button>
+
+                    {stageReward && (
+                        /* existing reward UI */
+                        <div style={{ marginBottom: '2.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', marginBottom: '1.2rem' }}>
+                                <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1))' }} />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '2px', color: 'var(--primary)' }}>SANDIQ MÜKAFATI</span>
+                                <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, rgba(255,255,255,0.1), transparent)' }} />
+                            </div>
+
+                            {!isChestOpen ? (
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '16px', padding: '1.2rem', border: '1px dashed rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                                    onClick={() => setIsChestOpen(true)}
+                                >
+                                    <motion.div
+                                        animate={{ y: [0, -5, 0], rotate: [0, -5, 5, 0] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                        style={{ display: 'inline-block', marginBottom: '0.5rem' }}
+                                    >
+                                        <Gift size={40} color="#f59e0b" />
+                                    </motion.div>
+                                    <button className="btn-rpg" style={{ width: '100%', fontSize: '0.8rem', padding: '0.5rem', '--n-color': '#f59e0b' } as any}>
+                                        Sandığı Aç
+                                    </button>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '16px', padding: '1.2rem', border: '1px solid rgba(99, 102, 241, 0.2)' }}
+                                >
+                                    <div style={{ width: '70px', height: '70px', borderRadius: '12px', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}>
+                                        {stageReward.itemImage ? (
+                                            <img src={stageReward.itemImage} alt={stageReward.itemName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                        ) : (
+                                            <Zap size={30} color="var(--primary)" />
+                                        )}
+                                        <div style={{ position: 'absolute', top: -10, right: -10, background: '#f59e0b', color: '#000', padding: '2px 6px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 900 }}>
+                                            +{stageReward.addedProgress}%
+                                        </div>
+                                    </div>
+                                    <div style={{ flex: 1, textAlign: 'left' }}>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.3rem' }}>{stageReward.itemName}</h3>
+                                        <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden', marginBottom: '0.3rem' }}>
+                                            <motion.div
+                                                initial={{ width: `${stageReward.currentProgress - stageReward.addedProgress}%` }}
+                                                animate={{ width: `${stageReward.currentProgress}%` }}
+                                                transition={{ duration: 1.5, delay: 0.5 }}
+                                                style={{ height: '100%', background: 'linear-gradient(90deg, #f59e0b, #d97706)' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 700 }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Mövcud İrəliləmə:</span>
+                                            <span style={{ color: '#f59e0b' }}>{stageReward.currentProgress}%</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {isChestOpen && stageReward.itemAwarded && (
+                                <motion.div
+                                    initial={{ scale: 0, rotate: -10 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    style={{ marginTop: '1.2rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', padding: '0.6rem', borderRadius: '10px', color: '#000', fontSize: '0.85rem', fontWeight: 900, letterSpacing: '1px', boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)' }}
+                                >
+                                    🎊 YENİ ƏŞYA QAZANILDI! 🎊
+                                </motion.div>
+                            )}
+                        </div>
+                    )}
+
+                    {!stageReward && stage && (
+                        <div style={{ marginBottom: '2.5rem', opacity: 0.6 }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                Bu səviyyə üçün artıq sandıq mükafatı əldə edilib.
+                            </p>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '0.8rem' }}>
+                        <button className="btn-rpg" onClick={() => navigate('/dashboard')} style={{ flex: 1, padding: '0.7rem', fontSize: '0.8rem', '--n-color': 'var(--primary)' } as any}>
+                            Panel-ə Qayıt
+                        </button>
+                        {stage && (
+                            <button className="btn-rpg btn-rpg--outline" onClick={() => window.location.reload()} style={{ flex: 1, padding: '0.7rem', fontSize: '0.8rem', '--n-color': 'var(--secondary)' } as any}>
+                                Yenidən Oyna
+                            </button>
+                        )}
+                    </div>
                 </motion.div>
             </div>
         );
@@ -313,13 +440,21 @@ const Quiz: React.FC = () => {
 
     return (
         <div className="container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', position: 'relative' }}>
                 <button
                     onClick={() => navigate('/dashboard')}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+                    className="btn-rpg"
+                    style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem', '--n-color': 'var(--text-muted)' } as any}
                 >
-                    <ArrowLeft size={18} /> Geri qayıt
+                    <ArrowLeft size={16} /> Geri qayıt
                 </button>
+
+                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
+                    <div className="rpg-label" style={{ marginBottom: 0, fontSize: '0.75rem' }}>{level?.toUpperCase()}</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '1px' }}>
+                        {stage ? `MƏRHƏLƏ ${stage}` : 'ÜMUMİ MƏŞQ'}
+                    </div>
+                </div>
 
                 {timeLeft !== null && (
                     <div style={{ display: 'flex', gap: '1rem' }}>
@@ -354,8 +489,8 @@ const Quiz: React.FC = () => {
                 )}
             </div>
 
-            <div style={{ marginBottom: '3rem', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontWeight: 600 }}>
+            <div style={{ marginBottom: '2rem', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>
                     <span>Sual {currentIndex + 1} / {questions.length}</span>
                     <span style={{ color: 'var(--primary)' }}>{Math.round(((currentIndex + 1) / questions.length) * 100)}%</span>
                 </div>
@@ -374,6 +509,7 @@ const Quiz: React.FC = () => {
                         key={questions[currentIndex]._id}
                         question={questions[currentIndex]}
                         onAnswer={handleAnswer}
+                        stage={stage}
                     />
                 )}
             </AnimatePresence>
