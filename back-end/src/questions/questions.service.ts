@@ -89,12 +89,9 @@ export class QuestionsService {
         const questionData = {
           level: String(row.level || 'level1'),
           text: String(row.text),
-          options: [
-            String(row.option1),
-            String(row.option2),
-            String(row.option3),
-            String(row.option4),
-          ],
+          options: [row.option1, row.option2, row.option3, row.option4]
+            .filter(opt => opt !== undefined && opt !== null && String(opt).trim() !== '')
+            .map(opt => String(opt)),
           correctAnswer: String(row.correctAnswer),
           rewardAmount: Number(row.rewardAmount) || 0.001,
           stage: (typeof row.stage === 'string' ? parseInt(row.stage.replace(/\D/g, '')) : Number(row.stage)) || 1,

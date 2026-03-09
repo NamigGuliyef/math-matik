@@ -23,9 +23,10 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, stage }
 
     const handleOptionClick = (index: number) => {
         if (isAnswered) return;
+        const validOptions = question.options.filter(opt => opt !== undefined && opt !== null && String(opt).trim() !== '' && String(opt).toLowerCase() !== 'undefined' && String(opt).toLowerCase() !== 'null');
         setSelectedOption(index);
         setIsAnswered(true);
-        const selectedValue = question.options[index];
+        const selectedValue = validOptions[index];
         setTimeout(() => {
             onAnswer(selectedValue === question.correctAnswer, selectedValue);
             setSelectedOption(null);
@@ -53,52 +54,52 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, stage }
             <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>{question.text}</h3>
 
             <div style={{ display: 'grid', gap: '0.8rem' }}>
-                {question.options.map((option, index) => {
-                    let style: React.CSSProperties = {
-                        padding: '1rem 1.25rem',
-                        borderRadius: '0.75rem',
-                        border: '1px solid var(--border)',
-                        background: 'rgba(255,255,255,0.03)',
-                        cursor: isAnswered ? 'default' : 'pointer',
-                        transition: 'all 0.2s',
-                        textAlign: 'left',
-                        fontSize: '1rem',
-                        fontWeight: 500,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        color: 'white'
-                    };
+                {question.options
+                    .filter(opt => opt !== undefined && opt !== null && String(opt).trim() !== '' && String(opt).toLowerCase() !== 'undefined' && String(opt).toLowerCase() !== 'null')
+                    .map((option, index, filteredOptions) => {
+                        let style: React.CSSProperties = {
+                            padding: '1rem 1.25rem',
+                            borderRadius: '0.75rem',
+                            border: '1px solid var(--border)',
+                            background: 'rgba(255,255,255,0.03)',
+                            cursor: isAnswered ? 'default' : 'pointer',
+                            transition: 'all 0.2s',
+                            textAlign: 'left',
+                            fontSize: '1rem',
+                            fontWeight: 500,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            color: 'white'
+                        };
 
-                    if (isAnswered) {
-                        const isCorrectSelection = question.options[selectedOption!] === question.correctAnswer;
-                        if (option === question.correctAnswer && isCorrectSelection) {
-                            style.borderColor = 'var(--success)';
-                            style.background = 'rgba(34, 197, 94, 0.1)';
-                            style.color = 'var(--success)';
-                        } else if (index === selectedOption && !isCorrectSelection) {
-                            style.borderColor = 'var(--error)';
-                            style.background = 'rgba(239, 68, 68, 0.1)';
-                            style.color = 'var(--error)';
+                        if (isAnswered) {
+                            const isCorrectSelection = filteredOptions[selectedOption!] === question.correctAnswer;
+                            if (option === question.correctAnswer && isCorrectSelection) {
+                                style.borderColor = 'var(--success)';
+                                style.background = 'rgba(34, 197, 94, 0.1)';
+                                style.color = 'var(--success)';
+                            } else if (index === selectedOption && !isCorrectSelection) {
+                                style.borderColor = 'var(--error)';
+                                style.background = 'rgba(239, 68, 68, 0.1)';
+                                style.color = 'var(--error)';
+                            }
                         }
-                    } else {
-                        // Hover handled by framer-motion or CSS
-                    }
 
-                    return (
-                        <motion.button
-                            key={index}
-                            style={style}
-                            whileHover={!isAnswered ? { scale: 1.02, background: 'rgba(255,255,255,0.1)', borderColor: 'var(--primary)' } : {}}
-                            onClick={() => handleOptionClick(index)}
-                            disabled={isAnswered}
-                        >
-                            {option}
-                            {isAnswered && option === question.correctAnswer && question.options[selectedOption!] === question.correctAnswer && <CheckCircle2 size={20} />}
-                            {isAnswered && index === selectedOption && option !== question.correctAnswer && <XCircle size={20} />}
-                        </motion.button>
-                    );
-                })}
+                        return (
+                            <motion.button
+                                key={index}
+                                style={style}
+                                whileHover={!isAnswered ? { scale: 1.02, background: 'rgba(255,255,255,0.1)', borderColor: 'var(--primary)' } : {}}
+                                onClick={() => handleOptionClick(index)} // index here refers to the filtered list index
+                                disabled={isAnswered}
+                            >
+                                {option}
+                                {isAnswered && option === question.correctAnswer && filteredOptions[selectedOption!] === question.correctAnswer && <CheckCircle2 size={20} />}
+                                {isAnswered && index === selectedOption && option !== question.correctAnswer && <XCircle size={20} />}
+                            </motion.button>
+                        );
+                    })}
             </div>
         </motion.div>
     );

@@ -72,19 +72,36 @@ export class QuizService {
             };
         }
 
-        // Pick a random item from the level
-        const randomItem = suitableItems[Math.floor(Math.random() * suitableItems.length)];
+        // Get items already in user's inventory to prioritize new ones
+        const userInventory = await this.inventoryModel.find({ userId: new Types.ObjectId(userId) }).exec();
+        const ownedItemIds = userInventory.map(i => i.itemId?.toString()).filter(id => !!id);
+
+        log(`User owns ${ownedItemIds.length} items. Checking for variety in level ${targetItemLevel}.`);
+
+        // Prioritize items user doesn't own yet
+        let pool = suitableItems.filter(item => !ownedItemIds.includes(item._id.toString()));
+
+        // If user owns all items of this level, use the full pool
+        if (pool.length === 0) {
+            log(`User already owns all suitable items for level ${targetItemLevel}. Using full pool.`);
+            pool = suitableItems;
+        } else {
+            log(`Found ${pool.length} items user doesn't own yet. Picking from this subset.`);
+        }
+
+        // Pick a random item from the pool
+        const randomItem = pool[Math.floor(Math.random() * pool.length)];
         const itemId = randomItem._id.toString();
 
         log(`Selected random item: ${randomItem.name} (${itemId})`);
 
-        // Update progress (5% per chest)
+        // Update progress (2% per chest)
         if (!user.itemProgress) {
             user.itemProgress = new Map();
         }
 
         const currentProgress = user.itemProgress.get(itemId) || 0;
-        let newProgress = currentProgress + 5;
+        let newProgress = currentProgress + 2;
         let itemAwarded = false;
 
         if (newProgress >= 100) {
@@ -121,7 +138,7 @@ export class QuizService {
                 rewardType: 'item_progress',
                 itemName: randomItem.name,
                 itemImage: randomItem.image,
-                addedProgress: 5,
+                addedProgress: 2,
                 currentProgress: newProgress === 0 && itemAwarded ? 100 : newProgress,
                 itemAwarded,
             }
