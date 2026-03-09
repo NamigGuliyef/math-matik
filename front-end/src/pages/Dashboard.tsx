@@ -107,7 +107,7 @@ const levelMeta = [
     { title: 'Sadə Vurma', description: 'Sadə vurma əməliyyatları və müqayisəsi.', icon: '✖️', color: '#ec4899', glow: 'rgba(236,72,153,0.6)', rank: 'FIGHTER' },
     { title: 'Mürəkkəb Vurma', description: 'Mürəkkəb vurma əməliyyatları və müqayisə.', icon: '🧮', color: '#f59e0b', glow: 'rgba(245,158,11,0.6)', rank: 'WARRIOR' },
     { title: 'Ardıcıllıq', description: 'Ardıcıllığı tamamla, ən böyük / kiçik tap.', icon: '📊', color: '#10b981', glow: 'rgba(16,185,129,0.6)', rank: 'CHAMPION' },
-    { title: 'Məntiq & Məsələ', description: 'Sadə, mürəkkəb və məntiqli məsələlər.', icon: '🧠', color: '#06b6d4', glow: 'rgba(6,182,212,0.6)', rank: 'LEGEND' },
+    { title: 'Məsələ & Məntiqi', description: 'Pul, yaş və s. , ədəd oxu, onluq-təklik məsələləri.', icon: '🧠', color: '#06b6d4', glow: 'rgba(6,182,212,0.6)', rank: 'LEGEND' },
 ];
 
 const zigzag = [0, 1, 0, -1, 0, 1];
