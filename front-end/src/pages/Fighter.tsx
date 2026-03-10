@@ -94,7 +94,11 @@ const Fighter: React.FC = () => {
     const [battleRounds, setBattleRounds] = useState<any[]>([]);
     const [battleResult, setBattleResult] = useState<any>(null);
     const [matchingOpponent, setMatchingOpponent] = useState(false);
+    const [isActionLoading, setIsActionLoading] = useState(false);
     const [hp, setHp] = useState({ user: 100, opponent: 100 });
+    const [damagePopups, setDamagePopups] = useState<any[]>([]);
+    const [animatingSide, setAnimatingSide] = useState<'p' | 'e' | null>(null);
+    const [hitSide, setHitSide] = useState<'p' | 'e' | null>(null);
 
     const allStatLabels: Record<string, string> = {
         can: 'HP',
@@ -282,17 +286,20 @@ const Fighter: React.FC = () => {
             setIsBattling(true);
             setBattleRounds([]);
             setBattleResult(null);
-            setHp({ user: 100, opponent: 100 });
 
             const resp = await axios.post(`${API_BASE_CLEAN}/fighter/battle/start`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            setBattleData(resp.data);
+            const data = resp.data;
+            setBattleData(data);
+            setHp({ user: data.battle.playerHp, opponent: data.battle.opponentHp });
+            setBattleRounds(data.battle.rounds || []);
             setMatchingOpponent(false);
 
-            // Start simulation
-            runBattleSimulation(resp.data);
+            if (data.battle.status === 'finished') {
+                setBattleResult(data);
+            }
         } catch (err: any) {
             setIsBattling(false);
             setMatchingOpponent(false);
@@ -300,35 +307,86 @@ const Fighter: React.FC = () => {
         }
     };
 
-    const runBattleSimulation = (data: any) => {
-        const rounds = data.battle.rounds;
-        let idx = 0;
+    const handleAction = async (actionPath: string) => {
+        if (isActionLoading || battleResult) return;
 
-        const interval = setInterval(() => {
-            if (idx >= rounds.length) {
-                clearInterval(interval);
+        setIsActionLoading(true);
+        try {
+            const resp = await axios.post(`${API_BASE_CLEAN}/fighter/battle/action`, {
+                battleId: battleData.battle._id,
+                action: actionPath
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const data = resp.data;
+            const round = data.round;
+            const meta = round.metadata;
+
+            // 1. Player Dash
+            setAnimatingSide('p');
+            await new Promise(r => setTimeout(r, 400));
+            setAnimatingSide(null);
+
+            // 2. Opponent Hit & Damage Popup
+            setHitSide('e');
+            showDamagePopup('e', round.opponentDamage, meta.p);
+            setHp(prev => ({ ...prev, opponent: round.opponentHpAfter }));
+            await new Promise(r => setTimeout(r, 600));
+            setHitSide(null);
+
+            // 3. Opponent Dash (if still alive)
+            if (round.opponentHpAfter > 0) {
+                setAnimatingSide('e');
+                await new Promise(r => setTimeout(r, 400));
+                setAnimatingSide(null);
+
+                // 4. Player Hit & Damage Popup
+                setHitSide('p');
+                showDamagePopup('p', round.playerDamage, meta.e);
+                setHp(prev => ({ ...prev, user: round.playerHpAfter }));
+                await new Promise(r => setTimeout(r, 600));
+                setHitSide(null);
+            }
+
+            setBattleData((prev: any) => ({ ...prev, battle: data.battle }));
+            setBattleRounds(data.battle.rounds);
+
+            if (data.finished) {
                 setTimeout(() => {
-                    setBattleResult(data);
-                    if (data.newBalance !== undefined) {
-                        setBalance(data.newBalance);
-                    }
+                    setBattleResult({
+                        ...data,
+                        isUserWinner: String(data.winnerId) === String(data.battle.userId)
+                    });
+                    if (data.newBalance !== undefined) setBalance(data.newBalance);
                     fetchFighterData();
-                }, 1000);
-                return;
+                }, 500);
             }
+        } catch (err: any) {
+            showNotification(err.response?.data?.message || 'Hərəkət xətası', 'error');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
 
-            const currentRound = rounds[idx];
-            setBattleRounds(prev => [...prev, currentRound]);
+    const showDamagePopup = (side: 'p' | 'e', value: number, meta: any) => {
+        let type = 'normal';
+        let text = `-${value}`;
 
-            // Update HPs
-            if (currentRound.attacker === 'Sən') {
-                setHp(prev => ({ ...prev, opponent: currentRound.defenderHp }));
-            } else {
-                setHp(prev => ({ ...prev, user: currentRound.defenderHp }));
-            }
+        if (meta.isMiss) { type = 'miss'; text = 'MISS'; }
+        else if (meta.isDodge) { type = 'dodge'; text = 'DODGE'; }
+        else if (meta.isCrit) { type = 'crit'; text = `CRIT -${value}`; }
+        else if (meta.isBlock) { type = 'block'; text = `BLOCK -${value}`; }
+        else if (value === 0) { text = ''; }
 
-            idx++;
-        }, 800);
+        if (!text) return;
+
+        const id = Math.random().toString(36).substr(2, 9);
+        setDamagePopups(prev => [...prev, { id, side, text, type }]);
+
+        setTimeout(() => {
+            setDamagePopups(prev => prev.filter(p => p.id !== id));
+        }, 1000);
     };
 
     if (loading) return <div className="fighter-container"></div>;
@@ -568,12 +626,23 @@ const Fighter: React.FC = () => {
                             </div>
                         ) : (
                             <>
+                                <div className="battle-round-indicator">
+                                    <span className="round-arena-text">⚔ ARENA DÖYÜŞÜ</span>
+                                    <span className="round-number-text">Raund {battleRounds.length + 1}</span>
+                                </div>
+
                                 <div className="battle-header">
-                                    <div className="fighter-profile user-side">
+                                    <div className={`fighter-profile user-side ${animatingSide === 'p' ? 'attacker-dash-p' : ''} ${hitSide === 'p' ? 'unit-hit' : ''}`}>
                                         <div className="fighter-name-tag">Sən</div>
                                         <div className="hp-bar-container">
-                                            <div className="hp-bar-fill" style={{ width: `${(hp.user / (battleData?.userStats?.can || 100)) * 100}%` }}></div>
-                                            <span className="hp-text">{Math.max(0, hp.user).toFixed(0)} / {battleData?.userStats?.can}</span>
+                                            <div className="hp-bar-fill" style={{
+                                                width: `${(hp.user / (battleData?.userStats?.can || 100)) * 100}%`,
+                                                backgroundColor: hp.user < (battleData?.userStats?.can * 0.3) ? '#ef4444' : '#22c55e'
+                                            }}></div>
+                                            <span className="hp-text">
+                                                <span className="hp-icon">❤️</span>
+                                                {Math.max(0, hp.user).toFixed(0)} / {battleData?.userStats?.can}
+                                            </span>
                                         </div>
                                         <div className="battle-avatar">
                                             {equipped.character ? (
@@ -581,42 +650,114 @@ const Fighter: React.FC = () => {
                                             ) : (
                                                 <UserIcon size={80} />
                                             )}
+                                            {damagePopups.filter(p => p.side === 'p').map(p => (
+                                                <div key={p.id} className={`damage-popup ${p.type}`}>{p.text}</div>
+                                            ))}
                                         </div>
                                     </div>
 
                                     <div className="battle-vs">VS</div>
 
-                                    <div className="fighter-profile opponent-side">
+                                    <div className={`fighter-profile opponent-side ${animatingSide === 'e' ? 'attacker-dash-e' : ''} ${hitSide === 'e' ? 'unit-hit' : ''}`}>
                                         <div className="fighter-name-tag">{battleData?.opponentName}</div>
                                         <div className="hp-bar-container">
-                                            <div className="hp-bar-fill" style={{ width: `${(hp.opponent / (battleData?.opponentStats?.can || 100)) * 100}%` }}></div>
-                                            <span className="hp-text">{Math.max(0, hp.opponent).toFixed(0)} / {battleData?.opponentStats?.can}</span>
+                                            <div className="hp-bar-fill" style={{
+                                                width: `${(hp.opponent / (battleData?.opponentStats?.can || 100)) * 100}%`,
+                                                backgroundColor: hp.opponent < (battleData?.opponentStats?.can * 0.3) ? '#ef4444' : '#22c55e'
+                                            }}></div>
+                                            <span className="hp-text">
+                                                <span className="hp-icon">❤️</span>
+                                                {Math.max(0, hp.opponent).toFixed(0)} / {battleData?.opponentStats?.can}
+                                            </span>
                                         </div>
                                         <div className="battle-avatar">
                                             <UserIcon size={80} />
+                                            {damagePopups.filter(p => p.side === 'e').map(p => (
+                                                <div key={p.id} className={`damage-popup ${p.type}`}>{p.text}</div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="battle-logs" id="battle-logs">
                                     {battleRounds.map((r, i) => (
-                                        <div key={i} className={`log-entry ${r.attacker === 'Sən' ? 'player-atk' : 'opp-atk'}`}>
-                                            <span className="round-num">Raund {r.round}:</span>
-                                            <span className="atk-name">{r.attacker}</span>
-                                            <span className="atk-action">hücum etdi - </span>
-                                            <span className="atk-dmg">{r.damage} zərər!</span>
+                                        <div key={i} className="log-entry" style={{ whiteSpace: 'pre-line' }}>
+                                            {r.log.split('\n').map((line: string, li: number) => {
+                                                if (!line.trim()) return <br key={li} />;
+
+                                                let className = 'log-text';
+                                                if (line.includes('Siz') || line.includes('Sən')) className = 'log-player';
+                                                else if (line.includes('Rəqib')) className = 'log-opponent';
+                                                else if (line.includes('⚔')) className = 'log-round-header';
+
+                                                // Highlight keywords
+                                                const parts = line.split(/(KRİTİK ZƏRBƏ|məğlub edildi|bloklandı|yayındı|boşa çıxdı)/g);
+
+                                                return (
+                                                    <div key={li} className={className}>
+                                                        {parts.map((part: string, pi: number) => {
+                                                            if (part === 'KRİTİK ZƏRBƏ') return <span key={pi} className="high-crit">{part}</span>;
+                                                            if (part === 'məğlub edildi') return <span key={pi} className="high-victory">{part}</span>;
+                                                            if (part === 'bloklandı' || part === 'yayındı') return <span key={pi} className="high-def">{part}</span>;
+                                                            if (part === 'boşa çıxdı') return <span key={pi} className="high-miss">{part}</span>;
+                                                            return part;
+                                                        })}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     ))}
                                     <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })}></div>
                                 </div>
 
+                                {!battleResult && (
+                                    <div className="battle-actions">
+                                        <button
+                                            className="action-btn attack"
+                                            onClick={() => handleAction('attack')}
+                                            disabled={isActionLoading}
+                                        >
+                                            <Sword size={24} color="#ef4444" /> Hücum
+                                        </button>
+                                        <button
+                                            className="action-btn defend"
+                                            onClick={() => handleAction('defend')}
+                                            disabled={isActionLoading}
+                                        >
+                                            <Shield size={24} color="#3b82f6" /> Müdafiə
+                                        </button>
+                                        <button
+                                            className="action-btn strong"
+                                            onClick={() => handleAction('strong_attack')}
+                                            disabled={isActionLoading}
+                                        >
+                                            <Zap size={24} color="#f59e0b" /> Güclü Hücum
+                                        </button>
+                                    </div>
+                                )}
+
                                 {battleResult && (
                                     <div className="battle-result-overlay">
                                         <div className={`result-card ${battleResult.isUserWinner ? 'win' : 'lose'}`}>
-                                            <h2>{battleResult.isUserWinner ? 'QALİB!' : 'MƏĞLUB!'}</h2>
-                                            <p className="reward-text">
-                                                Mükafat: <span>+{battleResult.isUserWinner ? battleResult.battle?.rewards?.winnerAmount ?? 0.5 : battleResult.battle?.rewards?.loserAmount ?? 0.1} AZN</span>
+                                            <div className="result-icon-big">
+                                                {battleResult.isUserWinner ? (
+                                                    <span style={{ fontSize: '5rem' }}>🏆</span>
+                                                ) : (
+                                                    <span style={{ fontSize: '5rem' }}>☠️</span>
+                                                )}
+                                            </div>
+                                            <h2>{battleResult.isUserWinner ? 'QƏLƏBƏ!' : 'MƏĞLUBİYYƏT!'}</h2>
+                                            <p className="result-message">
+                                                {battleResult.isUserWinner
+                                                    ? 'Siz rəqibi məğlub etdiniz!'
+                                                    : 'Rəqib daha güclü çıxdı. Daha yaxşı inventar topla və yenidən cəhd et.'}
                                             </p>
+
+                                            <div className="reward-item">
+                                                <Coins className="coin-icon" />
+                                                <span>+{battleResult.isUserWinner ? battleResult.battle?.rewards?.winnerAmount ?? 0.5 : battleResult.battle?.rewards?.loserAmount ?? 0.1} AZN</span>
+                                            </div>
+
                                             <button className="finish-battle-btn" onClick={() => setIsBattling(false)}>Bağla</button>
                                         </div>
                                     </div>

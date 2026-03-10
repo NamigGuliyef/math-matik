@@ -12,6 +12,13 @@ export class BattleController {
         return this.battleService.startBattle(req.user.userId);
     }
 
+    @Post('action')
+    @UseGuards(JwtAuthGuard)
+    async performAction(@Request() req: any) {
+        const { battleId, action } = req.body;
+        return this.battleService.performAction(battleId, req.user.userId, action);
+    }
+
     @Get('recent')
     @UseGuards(JwtAuthGuard)
     async getRecent(@Request() req: any) {

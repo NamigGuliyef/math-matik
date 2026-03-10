@@ -487,6 +487,40 @@
     transition: border-color 0.3s;
 }
 
+.g-player-sub {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.g-quick-nav {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.g-nav-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.g-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
+}
+
 /* background shimmer */
 .level-node::before {
     content: '';

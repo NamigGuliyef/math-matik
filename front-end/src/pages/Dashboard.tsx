@@ -12,7 +12,7 @@ import {
     Shield,
     Sword,
     ArrowLeft,
-    Loader2
+    Loader2,
 } from 'lucide-react';
 import api from '../api/client';
 import RulesModal from '../components/RulesModal';

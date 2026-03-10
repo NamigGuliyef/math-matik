@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Users, LogOut, Award, ChevronLeft, Menu, Shield } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Users, LogOut, Award, ChevronLeft, Menu, Shield, ScrollText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -24,6 +24,7 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/questions', icon: <PlusCircle size={20} />, label: 'Suallar' },
         { to: '/admin/users', icon: <Users size={20} />, label: 'İstifadəçilər' },
         { to: '/admin/fighter', icon: <Shield size={20} />, label: 'Döyüşçü Parametrləri' },
+        { to: '/admin/missions', icon: <ScrollText size={20} />, label: 'Tapşırıqlar & Nailiyyətlər' },
     ];
 
     return (

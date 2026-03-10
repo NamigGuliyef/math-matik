@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Send, MessageSquare, X, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
@@ -20,6 +21,7 @@ interface OnlineUser {
 
 const GlobalChat: React.FC = () => {
     const { user, isAuthenticated } = useAuth();
+    const location = useLocation();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -183,6 +185,9 @@ const GlobalChat: React.FC = () => {
     };
 
     if (!isAuthenticated) return null;
+
+    // Quiz hissədə çatın gizlədilməsi
+    if (location.pathname.startsWith('/quiz')) return null;
 
     const quizLimitReached = (user?.totalAnswered || 0) >= 20;
 

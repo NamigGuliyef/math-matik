@@ -22,6 +22,7 @@ import { UserInventory, UserInventorySchema } from '../fighter/schemas/user-inve
     ]),
     ChatModule,
     FighterModule,
+    MissionsModule,
   ],
   providers: [QuestionsService, QuizService],
   controllers: [QuestionsController],

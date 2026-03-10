@@ -4,8 +4,10 @@ import { Model, Types } from 'mongoose';
 import { Question } from './schemas/question.schema';
 import { User } from '../users/schemas/user.schema';
 import { FighterService } from '../fighter/fighter.service';
-import { FighterItem } from '../fighter/schemas/fighter-item.schema';
-import { UserInventory } from '../fighter/schemas/user-inventory.schema';
+import { FighterItem, FighterItemSchema } from '../fighter/schemas/fighter-item.schema';
+import { UserInventory, UserInventorySchema } from '../fighter/schemas/user-inventory.schema';
+import { MissionsService } from '../missions/missions.service';
+import { MissionType } from '../missions/schemas/mission.schema';
 
 @Injectable()
 export class QuizService {
@@ -15,6 +17,7 @@ export class QuizService {
         @InjectModel(FighterItem.name) private itemModel: Model<FighterItem>,
         @InjectModel(UserInventory.name) private inventoryModel: Model<UserInventory>,
         private fighterService: FighterService,
+        private missionsService: MissionsService,
     ) { }
 
     async completeStage(userId: string, levelCap: string, stage: number) {
@@ -29,10 +32,13 @@ export class QuizService {
 
         log(`Completing stage: User ${userId}, LevelCap ${levelCap}, Stage ${stage}`);
 
+        // Track Mission Progress
+        await this.missionsService.trackProgress(userId, MissionType.STAGE_COMPLETE, 1);
+
         const user = await this.userModel.findById(userId);
         if (!user) throw new NotFoundException('İstifadəçi tapılmadı');
 
-        const stageId = `${levelCap.toLowerCase()}:${stage}`;
+        const stageId = `${levelCap.toLowerCase()}:${stage} `;
 
         // Robust level parsing (level1, Level1, LEVEL1 -> 1)
         const levelMatch = levelCap.match(/\d+/);
@@ -41,7 +47,7 @@ export class QuizService {
 
         const isAlreadyCompleted = user.completedStages.includes(stageId);
 
-        log(`Parsed Level: ${levelNum}, Target Item Level: ${targetItemLevel}, Already Completed: ${isAlreadyCompleted}`);
+        log(`Parsed Level: ${levelNum}, Target Item Level: ${targetItemLevel}, Already Completed: ${isAlreadyCompleted} `);
 
         if (isAlreadyCompleted) {
             log(`User already completed stage ${stageId}. Skipping reward.`);
@@ -76,14 +82,14 @@ export class QuizService {
         const userInventory = await this.inventoryModel.find({ userId: new Types.ObjectId(userId) }).exec();
         const ownedItemIds = userInventory.map(i => i.itemId?.toString()).filter(id => !!id);
 
-        log(`User owns ${ownedItemIds.length} items. Checking for variety in level ${targetItemLevel}.`);
+        log(`User owns ${ownedItemIds.length} items.Checking for variety in level ${targetItemLevel}.`);
 
         // Prioritize items user doesn't own yet
         let pool = suitableItems.filter(item => !ownedItemIds.includes(item._id.toString()));
 
         // If user owns all items of this level, use the full pool
         if (pool.length === 0) {
-            log(`User already owns all suitable items for level ${targetItemLevel}. Using full pool.`);
+            log(`User already owns all suitable items for level ${targetItemLevel}.Using full pool.`);
             pool = suitableItems;
         } else {
             log(`Found ${pool.length} items user doesn't own yet. Picking from this subset.`);

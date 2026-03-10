@@ -65,6 +65,18 @@ export class User extends Document {
   @Prop({ type: Map, of: Number, default: {} })
   itemProgress: Map<string, number>; // itemId -> percentage (0-100)
 
+  @Prop({ default: 0 })
+  chests: number;
+
+  @Prop({ default: 0 })
+  totalBattlesWon: number;
+
+  @Prop({ default: 0 })
+  totalStagesCompleted: number;
+
+  @Prop({ default: 0 })
+  totalChestsOpened: number;
+
   @Prop({ default: Date.now })
   lastActivity: Date;
 }

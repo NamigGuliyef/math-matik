@@ -6,20 +6,29 @@ export class BattleRound {
     @Prop({ required: true })
     round: number;
 
-    @Prop({ required: true })
-    attacker: string;
+    @Prop()
+    playerAction: string;
 
-    @Prop({ required: true })
-    defender: string;
+    @Prop()
+    opponentAction: string;
 
-    @Prop({ required: true })
-    damage: number;
+    @Prop()
+    playerDamage: number;
 
-    @Prop({ required: true })
-    attackerHp: number;
+    @Prop()
+    opponentDamage: number;
 
-    @Prop({ required: true })
-    defenderHp: number;
+    @Prop()
+    playerHpAfter: number;
+
+    @Prop()
+    opponentHpAfter: number;
+
+    @Prop()
+    log: string;
+
+    @Prop({ type: Object })
+    metadata: any;
 }
 
 @Schema({ timestamps: true })
@@ -29,6 +38,9 @@ export class Battle extends Document {
 
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     opponentId: Types.ObjectId;
+
+    @Prop({ type: String, default: 'ongoing', enum: ['ongoing', 'finished'] })
+    status: string;
 
     @Prop({ type: Types.ObjectId, ref: 'User' })
     winnerId: Types.ObjectId;
@@ -47,6 +59,27 @@ export class Battle extends Document {
 
     @Prop({ default: 0 })
     opponentPower: number;
+
+    @Prop({ default: 100 })
+    playerHp: number;
+
+    @Prop({ default: 100 })
+    opponentHp: number;
+
+    @Prop({ default: 100 })
+    maxPlayerHp: number;
+
+    @Prop({ default: 100 })
+    maxOpponentHp: number;
+
+    @Prop({ type: Object })
+    userStats: any;
+
+    @Prop({ type: Object })
+    opponentStats: any;
+
+    @Prop()
+    opponentName: string;
 }
 
 export const BattleSchema = SchemaFactory.createForClass(Battle);

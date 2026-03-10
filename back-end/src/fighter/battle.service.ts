@@ -4,6 +4,8 @@ import { Model, Types } from 'mongoose';
 import { User } from '../users/schemas/user.schema';
 import { UserInventory } from './schemas/user-inventory.schema';
 import { Battle } from './schemas/battle.schema';
+import { MissionsService } from '../missions/missions.service';
+import { MissionType } from '../missions/schemas/mission.schema';
 
 @Injectable()
 export class BattleService {
@@ -11,6 +13,7 @@ export class BattleService {
         @InjectModel(User.name) private userModel: Model<User>,
         @InjectModel(UserInventory.name) private inventoryModel: Model<UserInventory>,
         @InjectModel(Battle.name) private battleModel: Model<Battle>,
+        private readonly missionsService: MissionsService,
     ) { }
 
     async getUserStats(userId: string) {
@@ -26,15 +29,23 @@ export class BattleService {
             zerbe_gucu: 10, // Base Damage
             mudafie: 0,
             zireh_delme: 0,
+            kritik_sans: 5, // Base 5%
+            qacinma_sansi: 0,
+            bloklama_gucu: 0,
+            deqiqlik: 0
         };
 
-        equipped.forEach((item: any) => {
-            if (item.itemId && item.itemId.attributes) {
-                Object.entries(item.itemId.attributes).forEach(([key, value]) => {
-                    if (key in stats) {
-                        stats[key] += Number(value);
-                    }
+        equipped.forEach((record: any) => {
+            if (record.itemId && record.itemId.attributes) {
+                Object.entries(record.itemId.attributes).forEach(([key, value]) => {
+                    stats[key] = (stats[key] || 0) + Number(value);
                 });
+            }
+            if (record.characterId) {
+                // Character level improves base HP/Damage
+                stats.can += record.characterId.level * 10;
+                stats.zerbe_gucu += record.characterId.level * 2;
+                stats.name = record.characterId.name;
             }
         });
 
@@ -42,12 +53,37 @@ export class BattleService {
     }
 
     calculatePower(stats: any) {
-        // Simple power calculation for matchmaking
-        return stats.can + stats.zerbe_gucu * 2 + stats.mudafie + stats.zireh_delme;
+        // More comprehensive power calculation
+        return (
+            (stats.can || 100) +
+            (stats.zerbe_gucu || 10) * 3 +
+            (stats.mudafie || 0) * 1.5 +
+            (stats.zireh_delme || 0) * 1.5 +
+            (stats.kritik_sans || 0) * 5 +
+            (stats.qacinma_sansi || 0) * 10 +
+            (stats.bloklama_gucu || 0) * 5
+        );
     }
 
     async startBattle(userId: string) {
         const userIdObj = new Types.ObjectId(userId);
+
+        // Check if there's an ongoing battle
+        const ongoingBattle = await this.battleModel.findOne({
+            userId: userIdObj,
+            status: 'ongoing'
+        }).exec();
+
+        if (ongoingBattle) {
+            return {
+                battle: ongoingBattle,
+                userStats: ongoingBattle.userStats,
+                opponentStats: ongoingBattle.opponentStats,
+                opponentName: (await this.userModel.findById(ongoingBattle.opponentId))?.name || 'Rəqib',
+                isResumed: true
+            };
+        }
+
         const userStats = await this.getUserStats(userId);
         const userPower = this.calculatePower(userStats);
 
@@ -58,11 +94,10 @@ export class BattleService {
             .exec();
         const lastOpponentId = lastBattle?.opponentId;
 
-        // Matchmaking: ±20% power range, excluding self and last opponent
+        // Matchmaking: ±20% power range
         const minPower = userPower * 0.8;
         const maxPower = userPower * 1.2;
 
-        // For MVP, pick from all users excluding self (and last opponent if exists)
         const excludedIds: Types.ObjectId[] = [userIdObj];
         if (lastOpponentId) excludedIds.push(lastOpponentId as Types.ObjectId);
 
@@ -70,7 +105,6 @@ export class BattleService {
             _id: { $nin: excludedIds },
         }).limit(100).exec();
 
-        // Filter and calculate power for potential opponents (this is heavy, but okay for MVP)
         const matchedOpponents: { user: any; stats: Record<string, number>; power: number }[] = [];
         for (const opponent of potentialOpponents) {
             const oppStats = await this.getUserStats(opponent._id.toString());
@@ -82,7 +116,6 @@ export class BattleService {
 
         let opponent;
         if (matchedOpponents.length === 0) {
-            // If no one in range, just pick a random one that isn't self
             const fallbackOpponent = await this.userModel.findOne({ _id: { $ne: userIdObj } }).exec();
             if (!fallbackOpponent) throw new NotFoundException('Rəqib tapılmadı');
             const oppStats = await this.getUserStats(fallbackOpponent._id.toString());
@@ -91,100 +124,216 @@ export class BattleService {
             opponent = matchedOpponents[Math.floor(Math.random() * matchedOpponents.length)];
         }
 
-        const battleResult = this.simulateBattle(
-            { id: userId, stats: userStats, name: 'Sən' },
-            { id: opponent.user._id.toString(), stats: opponent.stats, name: opponent.user.name }
-        );
-
-        // Awards
-        const winnerAmount = 0.5;
-        const loserAmount = 0.1;
-
-        const isUserWinner = battleResult.winnerId === userId;
-
-        // Update balances
-        await this.userModel.findByIdAndUpdate(userId, {
-            $inc: { balance: isUserWinner ? winnerAmount : loserAmount }
-        });
-        await this.userModel.findByIdAndUpdate(opponent.user._id, {
-            $inc: { balance: isUserWinner ? loserAmount : winnerAmount }
-        });
-
         const battle = new this.battleModel({
             userId: userIdObj,
             opponentId: opponent.user._id,
-            winnerId: new Types.ObjectId(battleResult.winnerId),
-            rounds: battleResult.rounds,
-            rewards: {
-                winnerAmount,
-                loserAmount
-            },
+            status: 'ongoing',
+            playerHp: userStats.can,
+            opponentHp: opponent.stats.can,
+            maxPlayerHp: userStats.can,
+            maxOpponentHp: opponent.stats.can,
+            userStats,
+            opponentStats: opponent.stats,
+            opponentName: opponent.user.name,
             userPower,
-            opponentPower: opponent.power
+            opponentPower: opponent.power,
+            rounds: []
         });
 
         await battle.save();
-
-        const updatedUser = await this.userModel.findById(userIdObj).exec();
 
         return {
             battle,
             userStats,
             opponentStats: opponent.stats,
             opponentName: opponent.user.name,
-            isUserWinner: battleResult.winnerId === userId,
-            newBalance: updatedUser?.balance ?? 0,
+            isResumed: false
         };
     }
 
-    private simulateBattle(p1: any, p2: any) {
-        const rounds: Array<{ round: number; attacker: string; defender: string; damage: number; attackerHp: number; defenderHp: number }> = [];
-        let h1 = p1.stats.can;
-        let h2 = p2.stats.can;
-        let roundNum = 1;
-
-        while (h1 > 0 && h2 > 0 && roundNum <= 50) {
-            // P1 attacks P2
-            const d1 = this.calculateDamage(p1.stats, p2.stats);
-            h2 -= d1;
-            if (h2 < 0) h2 = 0;
-            rounds.push({
-                round: roundNum,
-                attacker: p1.name,
-                defender: p2.name,
-                damage: Math.round(d1 * 10) / 10,
-                attackerHp: Math.round(h1 * 10) / 10,
-                defenderHp: Math.round(h2 * 10) / 10
-            });
-
-            if (h2 <= 0) break;
-
-            // P2 attacks P1
-            const d2 = this.calculateDamage(p2.stats, p1.stats);
-            h1 -= d2;
-            if (h1 < 0) h1 = 0;
-            rounds.push({
-                round: roundNum,
-                attacker: p2.name,
-                defender: p1.name,
-                damage: Math.round(d2 * 10) / 10,
-                attackerHp: Math.round(h2 * 10) / 10,
-                defenderHp: Math.round(h1 * 10) / 10
-            });
-
-            roundNum++;
+    async performAction(battleId: string, userId: string, action: string) {
+        const battle = await this.battleModel.findById(battleId).exec();
+        if (!battle || battle.status !== 'ongoing') {
+            throw new NotFoundException('Döyüş tapılmadı və ya artıq bitib');
         }
 
+        if (battle.userId.toString() !== userId) {
+            throw new Error('Bu döyüş sizə aid deyil');
+        }
+
+        // Enemy AI Action
+        const enemyRand = Math.random();
+        let enemyAction = 'attack';
+        if (enemyRand < 0.5) enemyAction = 'attack';
+        else if (enemyRand < 0.75) enemyAction = 'defend';
+        else enemyAction = 'strong_attack';
+
+        const roundNum = battle.rounds.length + 1;
+        let log = `⚔ Raund ${roundNum}\n\n`;
+
+        // Execute Player Action
+        const pResult = this.calculateTurnDamage(action, battle.userStats, battle.opponentStats, enemyAction === 'defend', 'Sən');
+        battle.opponentHp -= pResult.damage;
+        log += `${pResult.flavorText}\n`;
+
+        // Execute Enemy Action (if still alive)
+        let eResult: any = { damage: 0, flavorText: '', isMiss: true };
+        if (battle.opponentHp > 0) {
+            eResult = this.calculateTurnDamage(enemyAction, battle.opponentStats, battle.userStats, action === 'defend', battle.opponentName || 'Rəqib');
+            battle.playerHp -= eResult.damage;
+            log += `\n${eResult.flavorText}`;
+        } else {
+            battle.opponentHp = 0;
+            log += `\n💀 Rəqib məğlub edildi!`;
+        }
+
+        if (battle.playerHp < 0) battle.playerHp = 0;
+
+        const round: any = {
+            round: roundNum,
+            playerAction: action,
+            opponentAction: enemyAction,
+            playerDamage: eResult.damage, // damage taken by player
+            opponentDamage: pResult.damage, // damage taken by opponent
+            playerHpAfter: battle.playerHp,
+            opponentHpAfter: battle.opponentHp,
+            log,
+            metadata: {
+                p: {
+                    isCrit: pResult.isCrit,
+                    isMiss: pResult.isMiss,
+                    isDodge: pResult.isDodge,
+                    isBlock: pResult.isBlock
+                },
+                e: {
+                    isCrit: eResult.isCrit,
+                    isMiss: eResult.isMiss,
+                    isDodge: eResult.isDodge,
+                    isBlock: eResult.isBlock
+                }
+            }
+        };
+
+        battle.rounds.push(round);
+
+        // Check if finished
+        let battleFinished = false;
+        if (battle.opponentHp <= 0 || battle.playerHp <= 0) {
+            battleFinished = true;
+            battle.status = 'finished';
+
+            // Critical Fix: Explicit winnerId assignment
+            if (battle.opponentHp <= 0) {
+                battle.winnerId = battle.userId;
+            } else {
+                battle.winnerId = battle.opponentId;
+            }
+
+            // Awards
+            const winnerAmount = 0.5;
+            const loserAmount = 0.1;
+            battle.rewards = { winnerAmount, loserAmount };
+
+            const isUserWinner = battle.winnerId.toString() === battle.userId.toString();
+
+            // Update balances correctly based on who won
+            const userReward = isUserWinner ? winnerAmount : loserAmount;
+            const opponentReward = isUserWinner ? loserAmount : winnerAmount;
+
+            const userUpdate: any = { $inc: { balance: userReward } };
+            if (isUserWinner) {
+                userUpdate.$inc.totalBattlesWon = 1;
+            }
+
+            await this.userModel.findByIdAndUpdate(battle.userId, userUpdate);
+            await this.userModel.findByIdAndUpdate(battle.opponentId, {
+                $inc: { balance: opponentReward }
+            });
+
+            if (isUserWinner) {
+                await this.missionsService.trackProgress(battle.userId, MissionType.BATTLE_WIN, 1);
+            }
+        }
+
+        await battle.save();
+
         return {
-            winnerId: h1 > 0 ? p1.id : p2.id,
-            rounds
+            battle,
+            round,
+            finished: battleFinished,
+            winnerId: battle.winnerId
         };
     }
 
-    private calculateDamage(attackerStats: any, defenderStats: any) {
-        const effectiveDefense = Math.max(0, defenderStats.mudafie - attackerStats.zireh_delme);
-        const damage = attackerStats.zerbe_gucu * (100 / (100 + effectiveDefense));
-        return damage;
+    private calculateTurnDamage(action: string, attackerStats: any, defenderStats: any, isDefending: boolean, attackerName: string) {
+        let weaponDamage = attackerStats.zerbe_gucu || 10;
+        let hitChance = attackerStats.deqiqlik ? (100 + attackerStats.deqiqlik) : 100;
+        let actionName = action === 'strong_attack' ? 'Güclü Hücum' : (action === 'defend' ? 'Müdafiə' : 'Hücum');
+
+        let isCrit = false;
+        let isMiss = false;
+        let isDodge = false;
+        let isBlock = false;
+        let flavorText = '';
+
+        const isUserAttacker = attackerName === 'Sən';
+        const subj = isUserAttacker ? 'Siz' : attackerName;
+        const obj = isUserAttacker ? 'Rəqib' : 'Siz';
+
+        // Grammar helpers
+        const suffix1 = isUserAttacker ? 'nız' : ''; // aldı/aldınız, etdi/etdiniz
+        const suffix2 = isUserAttacker ? 'nız' : ''; // atdı/atdınız
+        const isUserDefender = !isUserAttacker;
+        const defSuffix = isUserDefender ? 'nız' : ''; // yayındı/yayındınız
+
+        if (action === 'strong_attack') {
+            weaponDamage *= 1.5;
+            hitChance *= 0.7; // 70% of base hit chance
+        } else if (action === 'defend') {
+            return { damage: 0, flavorText: `🛡 ${subj} müdafiə mövqeyi aldı${suffix1}.`, isMiss: false, isCrit: false, isDodge: false, isBlock: false };
+        }
+
+        // 1. Check Dodge
+        const dodgeChance = defenderStats.qacinma_sansi || 0;
+        if (Math.random() * 100 < dodgeChance) {
+            isDodge = true;
+            return { damage: 0, flavorText: `💨 ${obj} hücumdan yayındı${defSuffix}!`, isDodge, isCrit, isMiss, isBlock };
+        }
+
+        // 2. Check Hit
+        if (Math.random() * 100 > hitChance) {
+            isMiss = true;
+            return { damage: 0, flavorText: `❌ ${subj} tərəfindən endirilən ${actionName} boşa çıxdı!`, isMiss, isCrit, isDodge, isBlock };
+        }
+
+        // 3. Calculate Base Damage
+        const effectiveDefense = Math.max(0, (defenderStats.mudafie || 0) - (attackerStats.zireh_delme || 0));
+        let damage = weaponDamage * (100 / (100 + effectiveDefense));
+
+        // 4. Check Block
+        if (isDefending) {
+            isBlock = true;
+            damage *= 0.5;
+            flavorText = `🛡 Hücum bloklandı! `;
+        }
+
+        // 5. Check Crit
+        const critChance = attackerStats.kritik_sans || 5;
+        if (Math.random() * 100 < critChance) {
+            isCrit = true;
+            damage *= 2;
+            flavorText += `🔥 KRİTİK ZƏRBƏ! `;
+        }
+
+        damage = Math.round(damage * 10) / 10;
+
+        if (action === 'attack') {
+            flavorText += `${subj} silaha əl atdı${suffix2}. ${obj} ${damage} zərər aldı${defSuffix}.`;
+        } else {
+            flavorText += `${subj} ${actionName} etdi${suffix1}. ${obj} ${damage} zərər aldı${defSuffix}.`;
+        }
+
+        return { damage, flavorText, isCrit, isMiss, isDodge, isBlock };
     }
 
     async getRecentBattle(userId: string) {

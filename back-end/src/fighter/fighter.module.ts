@@ -23,6 +23,7 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
             { name: Battle.name, schema: BattleSchema },
         ]),
         CloudinaryModule,
+        MissionsModule,
     ],
     controllers: [FighterController, AdminFighterController, BattleController],
     providers: [FighterService, BattleService],
