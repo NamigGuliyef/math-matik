@@ -251,7 +251,7 @@ export class BattleService {
             });
 
             if (isUserWinner) {
-                await this.missionsService.trackProgress(battle.userId, MissionType.BATTLE_WIN, 1);
+                await this.missionsService.trackProgress(battle.userId.toString(), MissionType.BATTLE_WIN, 1);
             }
         }
 

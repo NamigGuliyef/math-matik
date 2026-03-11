@@ -10,7 +10,7 @@ import { UserInventory, UserInventorySchema } from './schemas/user-inventory.sch
 import { Character, CharacterSchema } from './schemas/character.schema';
 import { Battle, BattleSchema } from './schemas/battle.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
-
+import { MissionsModule } from '../missions/missions.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({

@@ -9,6 +9,7 @@ import { FighterModule } from '../fighter/fighter.module';
 import { QuizService } from './quiz.service';
 import { FighterItem, FighterItemSchema } from '../fighter/schemas/fighter-item.schema';
 import { UserInventory, UserInventorySchema } from '../fighter/schemas/user-inventory.schema';
+import { MissionsModule } from '../missions/missions.module';
 
 @Module({
   imports: [
