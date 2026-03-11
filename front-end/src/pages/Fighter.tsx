@@ -68,9 +68,10 @@ const getImageUrl = (path?: string) => {
 };
 
 const Fighter: React.FC = () => {
-    const { user, token } = useAuth();
+    const { user, token, updateUser } = useAuth();
     const { showNotification } = useNotification();
     const [activeTab, setActiveTab] = useState<'fighter' | 'shop'>('fighter');
+    const [bagTab, setBagTab] = useState<'inventory' | 'progress'>('inventory');
     const [equipped, setEquipped] = useState<Record<string, InventoryRecord | null>>({
         'dəbilqə': null,
         'zireh': null,
@@ -87,6 +88,31 @@ const Fighter: React.FC = () => {
     const [shopCharacters, setShopCharacters] = useState<Character[]>([]);
     const [balance, setBalance] = useState<number>(user?.balance || 0);
     const [loading, setLoading] = useState(true);
+
+    const handleClaimProgress = async (itemId: string) => {
+        try {
+            const resp = await axios.post(`${API_BASE_CLEAN}/fighter/claim-progress/${itemId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (resp.data.success && user) {
+                showNotification('Əşya çantaya əlavə olundu!', 'success');
+
+                // Update local user state
+                const newItemProgress = { ...user.itemProgress };
+                delete newItemProgress[itemId];
+
+                updateUser({
+                    ...user,
+                    itemProgress: newItemProgress
+                });
+
+                fetchFighterData();
+            }
+        } catch (err: any) {
+            showNotification(err.response?.data?.message || 'Xəta baş verdi', 'error');
+        }
+    };
 
     // Battle states
     const [isBattling, setIsBattling] = useState(false);
@@ -494,40 +520,96 @@ const Fighter: React.FC = () => {
 
                     {/* RIGHT: Bag / Inventory */}
                     <div className="fighter-right-col">
-                        <h2 className="bag-title">
-                            <ShoppingBag size={20} /> Çanta (İnventar)
-                        </h2>
-                        <div className="bag-grid">
-                            {bag.map(record => {
-                                const isItem = !!record.itemId;
-                                const data = isItem ? record.itemId : record.characterId;
-                                if (!data) return null;
-
-                                return (
-                                    <div key={record._id} className={`bag-item-card level-${data.level} ${!isItem ? 'bag-char-card' : ''}`}>
-                                        <div className="item-image-panel">
-                                            <SlotIcon
-                                                category={isItem ? (data as FighterItem).category : 'character'}
-                                                image={data.image}
-                                                size={36}
-                                            />
-                                            {/* Info Tooltip (shown on hover) */}
-                                            <div className="item-tooltip">
-                                                <div className={`tooltip-level ${getLevelColor(data.level)}`}>
-                                                    SƏV {data.level}
-                                                </div>
-                                                <div className="tooltip-name">{data.name}</div>
-                                            </div>
-                                        </div>
-                                        <div className="item-body">
-                                            <button className="btn-equip" onClick={() => handleEquip(record._id)}>Geyin</button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                        <div className="bag-header-tabs">
+                            <button
+                                className={`bag-header-tab ${bagTab === 'inventory' ? 'active' : ''}`}
+                                onClick={() => setBagTab('inventory')}
+                            >
+                                <ShoppingBag size={18} /> Çanta
+                            </button>
+                            <button
+                                className={`bag-header-tab ${bagTab === 'progress' ? 'active' : ''}`}
+                                onClick={() => setBagTab('progress')}
+                            >
+                                <Zap size={18} /> İrəliləmə
+                            </button>
                         </div>
-                        {bag.length === 0 && (
-                            <p className="bag-empty">Çantanız boşdur. Mağazadan alış-veriş edin!</p>
+
+                        {bagTab === 'inventory' ? (
+                            <>
+                                <div className="bag-grid">
+                                    {bag.map(record => {
+                                        const isItem = !!record.itemId;
+                                        const data = isItem ? record.itemId : record.characterId;
+                                        if (!data) return null;
+
+                                        return (
+                                            <div key={record._id} className={`bag-item-card level-${data.level} ${!isItem ? 'bag-char-card' : ''}`}>
+                                                <div className="item-image-panel">
+                                                    <SlotIcon
+                                                        category={isItem ? (data as FighterItem).category : 'character'}
+                                                        image={data.image}
+                                                        size={36}
+                                                    />
+                                                    {/* Info Tooltip (shown on hover) */}
+                                                    <div className="item-tooltip">
+                                                        <div className={`tooltip-level ${getLevelColor(data.level)}`}>
+                                                            SƏV {data.level}
+                                                        </div>
+                                                        <div className="tooltip-name">{data.name}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="item-body">
+                                                    <button className="btn-equip" onClick={() => handleEquip(record._id)}>Geyin</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {bag.length === 0 && (
+                                    <p className="bag-empty">Çantanız boşdur. Mağazadan alış-veriş edin!</p>
+                                )}
+                            </>
+                        ) : (
+                            <div className="item-progress-list">
+                                {Object.entries(user?.itemProgress || {}).length > 0 ? (
+                                    Object.entries(user?.itemProgress || {}).map(([itemId, progress]) => {
+                                        // Find item details from shopItems
+                                        const itemDetails = shopItems.find(i => i._id === itemId);
+                                        if (!itemDetails) return null;
+
+                                        return (
+                                            <div key={itemId} className={`progress-item-card level-${itemDetails.level}`}>
+                                                <div className="progress-item-main">
+                                                    <div className="progress-item-icon">
+                                                        <SlotIcon category={itemDetails.category} image={itemDetails.image} size={40} />
+                                                    </div>
+                                                    <div className="progress-item-info">
+                                                        <div className="progress-item-name">{itemDetails.name}</div>
+                                                        <div className="progress-bar-container">
+                                                            <div
+                                                                className="progress-bar-fill"
+                                                                style={{ width: `${Math.min(100, Number(progress))}%` }}
+                                                            ></div>
+                                                            <span className="progress-percentage">{Number(progress).toFixed(0)}%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {Number(progress) >= 100 && (
+                                                    <button
+                                                        className="btn-claim-progress"
+                                                        onClick={() => handleClaimProgress(itemId)}
+                                                    >
+                                                        Çantaya əlavə et
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="bag-empty">İrəliləyişdə olan əşya yoxdur.</p>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>

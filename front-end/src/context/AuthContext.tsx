@@ -20,6 +20,8 @@ interface User {
     completedStages: string[];
     itemProgress: Record<string, number>;
     chests: number;
+    profilePicture?: string;
+    totalBattlesWon?: number;
 }
 
 

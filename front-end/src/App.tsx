@@ -29,8 +29,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 };
 
-const Navbar: React.FC = () => {
+
+
+import { NotificationProvider } from './context/NotificationContext';
+import { MissionProvider, useMissionsCount } from './context/MissionContext';
+
+const NavbarContent: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const { unclaimedCount } = useMissionsCount();
 
   return (
     <nav className="navbar-v2 glass-card">
@@ -39,7 +45,7 @@ const Navbar: React.FC = () => {
           <div className="navbar-logo-wrap-v2">
             <img src="/favicon.png" alt="Math-Mathic Logo" className="navbar-logo-img-v2" style={{ maxWidth: '100%', maxHeight: '100%' }} />
           </div>
-          <span className="gradient-text navbar-logo-text-v2">MATHEMATIC</span>
+          <span className="gradient-text navbar-logo-text-v2">MATHEMATICS</span>
         </Link>
 
         {isAuthenticated ? (
@@ -54,8 +60,14 @@ const Navbar: React.FC = () => {
               <Link to="/dashboard" className="nav-icon-btn" title="Panel">
                 <LayoutDashboard size={17} color="#6366f1" /><span className="nav-icon-label">Panel</span>
               </Link>
-              <Link to="/missions" className="nav-icon-btn" title="Tapşırıqlar">
-                <ScrollText size={17} color="#ec4899" /><span className="nav-icon-label">Tapşırıqlar</span>
+              <Link to="/missions" className="nav-icon-btn" title="Tapşırıqlar" style={{ position: 'relative' }}>
+                <ScrollText size={17} color="#ec4899" />
+                <span className="nav-icon-label">Tapşırıqlar</span>
+                {unclaimedCount > 0 && (
+                  <span className="nav-badge">
+                    {unclaimedCount}
+                  </span>
+                )}
               </Link>
               <Link to="/fighter" className="nav-icon-btn" title="Döyüşçüm">
                 <Shield size={17} color="#ef4444" /><span className="nav-icon-label">Döyüşçüm</span>
@@ -98,68 +110,71 @@ const Navbar: React.FC = () => {
   );
 };
 
-
-import { NotificationProvider } from './context/NotificationContext';
+const Navbar: React.FC = () => {
+    return <NavbarContent />;
+};
 
 const App: React.FC = () => {
   return (
     <NotificationProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Main App Routes */}
-            <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Home /></main></>} />
+        <MissionProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Main App Routes */}
+              <Route path="/" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Home /></main></>} />
 
-            <Route path="/login" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Login /></main></>} />
-            <Route path="/register" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Register /></main></>} />
+              <Route path="/login" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Login /></main></>} />
+              <Route path="/register" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><Register /></main></>} />
 
-            <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
-            <Route path="/fighter" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Fighter /></ProtectedRoute></main></>} />
-            <Route path="/missions" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Missions /></ProtectedRoute></main></>} />
-            <Route path="/quiz/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
-            <Route path="/quiz/:level/:stage" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
-            <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
+              <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
+              <Route path="/fighter" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Fighter /></ProtectedRoute></main></>} />
+              <Route path="/missions" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Missions /></ProtectedRoute></main></>} />
+              <Route path="/quiz/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
+              <Route path="/quiz/:level/:stage" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
+              <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="questions" element={<QuestionList />} />
-              <Route path="questions/new" element={<QuestionForm />} />
-              <Route path="questions/edit/:id" element={<QuestionForm />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="fighter" element={<AdminFighter />} />
-              <Route path="missions" element={<AdminMissions />} />
-            </Route>
-          </Routes>
-          <GlobalChat />
-          <footer className="footer" style={{
-            padding: '2.5rem 0',
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            marginTop: 'auto'
-          }}>
-            <div className="container" style={{ textAlign: 'center' }}>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '1.1rem',
-                lineHeight: '1.6',
-                maxWidth: '800px',
-                margin: '0 auto',
-                fontWeight: 500
-              }}>
-                &copy; {new Date().getFullYear()} Mathematic Quiz Platforması. Bütün hüquqlar qorunur.<br />
-                <span className="gradient-text" style={{
-                  fontWeight: 800,
-                  fontSize: '1.2rem',
-                  display: 'inline-block',
-                  marginTop: '0.5rem'
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="questions" element={<QuestionList />} />
+                <Route path="questions/new" element={<QuestionForm />} />
+                <Route path="questions/edit/:id" element={<QuestionForm />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="fighter" element={<AdminFighter />} />
+                <Route path="missions" element={<AdminMissions />} />
+              </Route>
+            </Routes>
+            <GlobalChat />
+            <footer className="footer" style={{
+              padding: '2.5rem 0',
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              marginTop: 'auto'
+            }}>
+              <div className="container" style={{ textAlign: 'center' }}>
+                <p style={{
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  fontSize: '1.1rem',
+                  lineHeight: '1.6',
+                  maxWidth: '800px',
+                  margin: '0 auto',
+                  fontWeight: 500
                 }}>
-                  Riyaziyyatı bizimlə öyrənin və zirvələrə yüksəlin!
-                </span>
-              </p>
-            </div>
-          </footer>
-        </BrowserRouter>
+                  &copy; {new Date().getFullYear()} Mathematics Quiz Platforması. Bütün hüquqlar qorunur.<br />
+                  <span className="gradient-text" style={{
+                    fontWeight: 800,
+                    fontSize: '1.2rem',
+                    display: 'inline-block',
+                    marginTop: '0.5rem'
+                  }}>
+                    Riyaziyyatı bizimlə öyrənin və zirvələrə yüksəlin!
+                  </span>
+                </p>
+              </div>
+            </footer>
+          </BrowserRouter>
+        </MissionProvider>
       </AuthProvider>
     </NotificationProvider>
   );

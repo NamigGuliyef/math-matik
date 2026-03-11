@@ -31,7 +31,7 @@
 }
 
 .hero-h1 {
-    font-size: 4.5rem;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
     font-weight: 900;
     line-height: 1.1;
     margin-bottom: 2rem;
@@ -46,7 +46,7 @@
 }
 
 .hero-p {
-    font-size: 1.35rem;
+    font-size: clamp(1rem, 3vw, 1.35rem);
     color: var(--text-muted);
     line-height: 1.7;
     margin-bottom: 3rem;
@@ -172,7 +172,7 @@
 /* New card grid for stats */
 .stats-cards-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 1.25rem;
 }
 
@@ -765,31 +765,41 @@
 @media (max-width: 992px) {
     .fighter-preview-card {
         grid-template-columns: 1fr;
-        padding: 3rem 2rem;
+        padding: 2.5rem 1.5rem;
         text-align: center;
-        gap: 3rem;
+        gap: 2.5rem;
+    }
+
+    .fighter-showcase-content h2 {
+        font-size: clamp(2rem, 8vw, 2.8rem);
     }
 
     .fighter-showcase-content p {
         margin-left: auto;
         margin-right: auto;
+        font-size: 1.1rem;
     }
 
     .fighter-features-grid {
         justify-content: center;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .fighter-visual-preview {
-        max-width: 300px;
+        max-width: 280px;
         margin: 0 auto;
     }
 
     .sf-1 {
-        right: -5%;
+        right: -2%;
     }
 
     .sf-2 {
-        left: -5%;
+        left: -2%;
+    }
+    
+    .sf-3 {
+        display: none;
     }
 }
 
@@ -832,14 +842,15 @@
     }
 
     .hero-h1 {
-        font-size: 3rem;
-        margin-bottom: 2rem;
+        font-size: clamp(2rem, 10vw, 3rem);
+        margin-bottom: 1.5rem;
+        letter-spacing: -1px;
     }
 
     .hero-p {
         margin-left: auto;
         margin-right: auto;
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         margin-bottom: 2.5rem;
     }
 
@@ -848,20 +859,22 @@
     }
 
     .hero-visual-v2 {
-        max-width: 500px;
+        max-width: 450px;
         margin: 3rem auto 0;
     }
 
     .fc-1 {
         right: -2%;
+        top: 5%;
     }
 
     .fc-2 {
         left: -2%;
+        bottom: 5%;
     }
 
     .stats-strip {
-        margin-top: -2rem;
+        margin-top: -1.5rem;
         padding-bottom: 4rem;
     }
 
@@ -908,12 +921,13 @@
     .cta-box-v2 {
         grid-template-columns: 1fr;
         text-align: center;
-        padding: 4rem 2rem;
+        padding: 3rem 1.25rem;
         display: flex;
+        gap: 2rem;
     }
 
     .cta-text {
-        padding: 2rem;
+        padding: 1.5rem;
     }
 
     .cta-btn-wrap {
@@ -942,13 +956,14 @@
     }
 
     .hero-h1 {
-        font-size: 2.25rem;
-        letter-spacing: -1px;
+        font-size: clamp(1.75rem, 8vw, 2.25rem);
+        letter-spacing: -0.5px;
     }
 
     .hero-p {
-        font-size: 1.05rem;
-        line-height: 1.6;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        padding: 0 0.5rem;
     }
 
     .hero-cta-group {
@@ -979,7 +994,8 @@
     }
 
     .stats-cards-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
     }
 
     .stat-mini-card {

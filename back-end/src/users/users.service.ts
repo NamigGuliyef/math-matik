@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserRole } from './schemas/user.schema';
 import { MissionsService } from '../missions/missions.service';
 import { MissionType } from '../missions/schemas/mission.schema';
+import { Battle } from '../fighter/schemas/battle.schema';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Battle.name) private battleModel: Model<Battle>,
     private readonly missionsService: MissionsService,
   ) { }
 
@@ -30,9 +32,25 @@ export class UsersService {
   }
 
   async updateStats(id: string, stats: any): Promise<User | null> {
-    return this.userModel
+    const updatedUser = await this.userModel
       .findByIdAndUpdate(id, { $set: stats }, { new: true })
       .exec();
+    if (updatedUser) {
+      await this.syncBattleWins(id);
+    }
+    return updatedUser;
+  }
+
+  async syncBattleWins(userId: string): Promise<number> {
+    const winCount = await this.battleModel.countDocuments({
+      winnerId: new Types.ObjectId(userId)
+    });
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      $set: { totalBattlesWon: winCount }
+    });
+
+    return winCount;
   }
 
   async startQuiz(userId: string, level: string): Promise<User | null> {
@@ -238,9 +256,15 @@ export class UsersService {
   async getLeaderboard() {
     return this.userModel
       .find({ role: UserRole.STUDENT })
-      .select('name surname fatherName balance level correctAnswers')
+      .select('name surname fatherName balance level correctAnswers profilePicture')
       .sort({ correctAnswers: -1 })
       .limit(50)
+      .exec();
+  }
+
+  async updateProfilePicture(userId: string, imageUrl: string): Promise<User | null> {
+    return this.userModel
+      .findByIdAndUpdate(userId, { $set: { profilePicture: imageUrl } }, { new: true })
       .exec();
   }
 }

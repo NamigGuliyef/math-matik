@@ -112,6 +112,7 @@ export class QuestionsController {
   @UseGuards(JwtAuthGuard)
   @Get('status')
   async getStatus(@Request() req: any) {
+    await this.usersService.syncBattleWins(req.user.userId);
     return this.usersService.findById(req.user.userId);
   }
 

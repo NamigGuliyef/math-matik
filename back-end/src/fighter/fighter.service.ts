@@ -222,4 +222,38 @@ export class FighterService {
         // So, we can just return the record with its new state.
         return inventoryRecord;
     }
+
+    async claimProgressItem(userId: string, itemId: string) {
+        const userIdObj = new Types.ObjectId(userId);
+        const itemIdObj = new Types.ObjectId(itemId);
+
+        const user = await this.userModel.findById(userIdObj);
+        if (!user) throw new NotFoundException('İstifadəçi tapılmadı');
+
+        const progress = user.itemProgress.get(itemId);
+        if (progress === undefined) {
+            throw new BadRequestException('Bu əşya üçün irəliləyiş tapılmadı');
+        }
+
+        if (progress < 100) {
+            throw new BadRequestException(`İrəliləyiş kifayət deyil: ${progress}%`);
+        }
+
+        const item = await this.itemModel.findById(itemIdObj);
+        if (!item) throw new NotFoundException('Əşya tapılmadı');
+
+        // Add to inventory
+        const newItem = new this.inventoryModel({
+            userId: userIdObj,
+            itemId: itemIdObj,
+            isEquipped: false,
+        });
+        await newItem.save();
+
+        // Remove from progress
+        user.itemProgress.delete(itemId);
+        await user.save();
+
+        return { success: true, item };
+    }
 }

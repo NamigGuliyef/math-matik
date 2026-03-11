@@ -46,4 +46,10 @@ export class FighterController {
     async unequip(@Request() req: any, @Param('inventoryId') inventoryId: string) {
         return this.fighterService.unequipItem(req.user.userId, inventoryId);
     }
+
+    @Post('claim-progress/:itemId')
+    @UseGuards(JwtAuthGuard)
+    async claimProgress(@Request() req: any, @Param('itemId') itemId: string) {
+        return this.fighterService.claimProgressItem(req.user.userId, itemId);
+    }
 }

@@ -13,10 +13,12 @@ import {
     Sword,
     ArrowLeft,
     Loader2,
+    Camera,
 } from 'lucide-react';
 import api from '../api/client';
 import RulesModal from '../components/RulesModal';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../context/NotificationContext';
 import './Dashboard.css';
 
 /* ── Math symbol particles ── */
@@ -138,7 +140,8 @@ const XpBar: React.FC<{ pct: number; color: string; done: number; total: number;
 
 /* ═══════════════════════════════ COMPONENT ═══════════════════════════════ */
 const Dashboard: React.FC = () => {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, token } = useAuth();
+    const { showNotification } = useNotification();
     const [availableLevels, setAvailableLevels] = React.useState<string[]>([]);
     const [levelCounts, setLevelCounts] = React.useState<Record<string, { totalQuestions: number; totalStages: number }>>({});
     const [isRulesModalOpen, setIsRulesModalOpen] = React.useState(false);
@@ -146,8 +149,50 @@ const Dashboard: React.FC = () => {
     const [showStagesLevel, setShowStagesLevel] = React.useState<string | null>(null);
     const [levelStages, setLevelStages] = React.useState<any[]>([]);
     const [loadingStages, setLoadingStages] = React.useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
     const isStudent = user?.role === 'student';
+
+    const handleAvatarClick = () => {
+        if (!uploadingAvatar) {
+            fileInputRef.current?.click();
+        }
+    };
+
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Limit to 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('Şəkil ölçüsü 5MB-dan çox olmamalıdır', 'error');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        setUploadingAvatar(true);
+        try {
+            const res = await api.post('/users/upload-avatar', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.data) {
+                updateUser(res.data);
+                showNotification('Profil şəkli uğurla yeniləndi', 'success');
+            }
+        } catch (err: any) {
+            console.error('Error uploading avatar:', err);
+            showNotification(err.response?.data?.message || 'Şəkil yüklənərkən xəta baş verdi', 'error');
+        } finally {
+            setUploadingAvatar(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -236,6 +281,7 @@ const Dashboard: React.FC = () => {
         { label: 'BALANS', value: `${Number(user?.balance || 0).toFixed(2)} ₼`, icon: <Star size={20} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
         { label: 'RANK', value: user?.level?.toUpperCase() || 'LVL 1', icon: <Shield size={20} />, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
         { label: 'MƏRHƏLƏ', value: currentStageNum, icon: <Zap size={20} />, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
+        { label: 'QALİBİYYƏT', value: user?.totalBattlesWon || 0, icon: <Sword size={20} />, color: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
     ];
 
     return (
@@ -251,10 +297,28 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                 >
+                    {/* Hidden file input */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarUpload}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                    />
+
                     {/* Avatar hex */}
-                    <div className="g-player-avatar">
+                    <div className={`g-player-avatar ${uploadingAvatar ? 'uploading' : ''}`} onClick={handleAvatarClick}>
                         <div className="g-avatar-hex">
-                            <Sword size={26} color="#fff" />
+                            {uploadingAvatar ? (
+                                <Loader2 className="animate-spin" size={24} color="#fff" />
+                            ) : user?.profilePicture ? (
+                                <img src={user.profilePicture} alt="Profile" className="g-avatar-img" />
+                            ) : (
+                                <Sword size={26} color="#fff" />
+                            )}
+                        </div>
+                        <div className="g-avatar-upload-overlay">
+                            <Camera size={18} color="#fff" />
                         </div>
                     </div>
 

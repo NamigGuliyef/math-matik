@@ -328,9 +328,10 @@
     aspect-ratio: auto;
 }
 
-.slot-image-content {
-    height: 140px !important;
-    width: auto !important;
+.item-card .slot-image-content,
+.bag-item-card .slot-image-content {
+    height: 140px;
+    width: auto;
     object-fit: contain;
     transform: translateY(5px);
 }
@@ -597,6 +598,184 @@
 .bag-item-card:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* ── BAG HEADER TABS ── */
+.bag-header-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 0.3rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bag-header-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.4);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.bag-header-tab.active {
+    color: white;
+    background: rgba(56, 189, 248, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.bag-header-tab:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── ITEM PROGRESS LIST ── */
+.item-progress-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.item-progress-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.item-progress-list::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.2);
+    border-radius: 10px;
+}
+
+.progress-item-card {
+    background: linear-gradient(160deg, #1a1f35 0%, #0d1117 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--fighter-accent);
+}
+
+.progress-item-card.level-2::before { background: var(--fighter-rare); }
+.progress-item-card.level-3::before { background: var(--fighter-gold); }
+
+.progress-item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-item-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.progress-item-icon .slot-image-content {
+    height: 100% !important;
+    width: 100% !important;
+    object-fit: contain !important;
+    transform: none !important;
+}
+
+.progress-item-info {
+    flex: 1;
+}
+
+.progress-item-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 6px;
+}
+
+.progress-bar-container {
+    height: 18px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 9px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--fighter-accent) 0%, #0ea5e9 100%);
+    border-radius: 9px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.level-2 .progress-bar-fill { background: linear-gradient(90deg, var(--fighter-rare) 0%, #c084fc 100%); }
+.level-3 .progress-bar-fill { background: linear-gradient(90deg, var(--fighter-gold) 0%, #fbbf24 100%); }
+
+.progress-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+}
+
+.btn-claim-progress {
+    width: 100%;
+    padding: 0.5rem;
+    background: linear-gradient(to right, #22c55e, #16a34a);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.btn-claim-progress:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-claim-progress:active {
+    transform: translateY(0);
 }
 
 .bag-item-card {
@@ -870,7 +1049,7 @@
 /* ── BALANCE CARD ── */
 .balance-card {
     position: absolute;
-    top: 90px;
+    top: 20px;
     right: 2rem;
     background: rgba(15, 23, 42, 0.9);
     padding: 0.7rem 1.4rem;

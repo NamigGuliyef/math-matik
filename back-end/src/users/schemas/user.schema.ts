@@ -77,6 +77,9 @@ export class User extends Document {
   @Prop({ default: 0 })
   totalChestsOpened: number;
 
+  @Prop({ default: null })
+  profilePicture: string;
+
   @Prop({ default: Date.now })
   lastActivity: Date;
 }

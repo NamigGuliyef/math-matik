@@ -65,6 +65,7 @@ export class AuthService {
         restEndTimes: user.restEndTimes,
         levelProgress: user.levelProgress,
         levelSessionWrongAnswers: user.levelSessionWrongAnswers,
+        totalBattlesWon: user.totalBattlesWon,
       },
     };
   }
