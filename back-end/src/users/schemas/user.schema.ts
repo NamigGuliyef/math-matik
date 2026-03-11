@@ -53,8 +53,32 @@ export class User extends Document {
   @Prop({ type: Map, of: Number, default: {} })
   levelProgress: Map<string, number>;
 
+  @Prop({ type: Map, of: Number, default: {} })
+  stageProgress: Map<string, number>; // level:stage -> question index
+
   @Prop({ default: 0 })
-  sessionWrongAnswers: number; // Keep for now if any generic logic relies on it, but we'll prioritize maps
+  sessionWrongAnswers: number;
+
+  @Prop({ type: [String], default: [] })
+  completedStages: string[]; // Format: "level:stage"
+
+  @Prop({ type: Map, of: Number, default: {} })
+  itemProgress: Map<string, number>; // itemId -> percentage (0-100)
+
+  @Prop({ default: 0 })
+  chests: number;
+
+  @Prop({ default: 0 })
+  totalBattlesWon: number;
+
+  @Prop({ default: 0 })
+  totalStagesCompleted: number;
+
+  @Prop({ default: 0 })
+  totalChestsOpened: number;
+
+  @Prop({ default: Date.now })
+  lastActivity: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

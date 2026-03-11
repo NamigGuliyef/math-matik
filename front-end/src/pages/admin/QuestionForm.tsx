@@ -12,6 +12,7 @@ const QuestionForm: React.FC = () => {
 
     const [formData, setFormData] = useState({
         level: 'level1',
+        stage: 1,
         text: '',
         options: ['', '', '', ''],
         correctAnswer: '',
@@ -30,6 +31,7 @@ const QuestionForm: React.FC = () => {
                     if (question) {
                         setFormData({
                             level: question.level,
+                            stage: question.stage || 1,
                             text: question.text,
                             options: question.options,
                             correctAnswer: question.correctAnswer,
@@ -113,10 +115,25 @@ const QuestionForm: React.FC = () => {
                         </select>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label>Mərhələ (Stage)</label>
+                        <input
+                            type="number"
+                            name="stage"
+                            min="1"
+                            style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white' }}
+                            value={formData.stage}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <label>Mükafat Məbləği (₼)</label>
                         <input
                             type="number"
-                            step="0.001"
+                            step="0.0001"
                             name="rewardAmount"
                             style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white' }}
                             value={formData.rewardAmount}

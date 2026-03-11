@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Quiz from './pages/Quiz';
 import Leaderboard from './pages/Leaderboard';
 import Fighter from './pages/Fighter';
+import Missions from './pages/Missions';
 
 // Admin Pages
 import AdminLayout from './components/layouts/AdminLayout';
@@ -16,9 +17,11 @@ import QuestionList from './pages/admin/QuestionList';
 import QuestionForm from './pages/admin/QuestionForm';
 import UserManagement from './pages/admin/UserManagement';
 import AdminFighter from './pages/admin/AdminFighter';
+import AdminMissions from './pages/admin/AdminMissions';
 import AdminGuard from './components/AdminGuard';
 
-import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings, Shield } from 'lucide-react';
+import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings, Shield, ScrollText } from 'lucide-react';
+import GlobalChat from './components/GlobalChat';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,28 +45,35 @@ const Navbar: React.FC = () => {
         {isAuthenticated ? (
           <div className="navbar-links-v2">
             {user?.role === 'admin' && (
-              <Link to="/admin" className="navbar-admin-btn-v2">
-                <Settings size={20} /><span className="navbar-link-text-v2">Admin Panel</span>
+              <Link to="/admin" className="navbar-admin-btn-v2" title="Admin Panel">
+                <Settings size={18} /><span className="navbar-link-text-v2">Admin</span>
               </Link>
             )}
-            <Link to="/dashboard" className="nav-link-v2-main">
-              <LayoutDashboard size={20} color="var(--primary)" /><span className="navbar-link-text-v2">Panel</span>
-            </Link>
-            <Link to="/fighter" className="nav-link-v2-main">
-              <Shield size={20} color="var(--secondary)" /><span className="navbar-link-text-v2">Döyüşçüm</span>
-            </Link>
-            <Link to="/leaderboard" className="nav-link-v2-main">
-              <Trophy size={20} color="var(--warning)" /><span className="navbar-link-text-v2">Reytinq</span>
-            </Link>
+
+            <div className="navbar-nav-group">
+              <Link to="/dashboard" className="nav-icon-btn" title="Panel">
+                <LayoutDashboard size={17} color="#6366f1" /><span className="nav-icon-label">Panel</span>
+              </Link>
+              <Link to="/missions" className="nav-icon-btn" title="Tapşırıqlar">
+                <ScrollText size={17} color="#ec4899" /><span className="nav-icon-label">Tapşırıqlar</span>
+              </Link>
+              <Link to="/fighter" className="nav-icon-btn" title="Döyüşçüm">
+                <Shield size={17} color="#ef4444" /><span className="nav-icon-label">Döyüşçüm</span>
+              </Link>
+              <Link to="/leaderboard" className="nav-icon-btn" title="Reytinq">
+                <Trophy size={17} color="#f59e0b" /><span className="nav-icon-label">Reytinq</span>
+              </Link>
+            </div>
+
             <div className="navbar-user-pill-v2">
-              <UserIcon size={18} color="white" />
+              <UserIcon size={16} color="white" />
               <span className="navbar-username-v2">{user?.name} {user?.surname}</span>
               <button
                 onClick={logout}
                 className="navbar-logout-btn-v2"
                 title="Çıxış"
               >
-                <LogOut size={16} />
+                <LogOut size={15} />
               </button>
             </div>
           </div>
@@ -105,7 +115,9 @@ const App: React.FC = () => {
 
             <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
             <Route path="/fighter" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Fighter /></ProtectedRoute></main></>} />
+            <Route path="/missions" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Missions /></ProtectedRoute></main></>} />
             <Route path="/quiz/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
+            <Route path="/quiz/:level/:stage" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
             <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
 
             {/* Admin Routes */}
@@ -116,9 +128,10 @@ const App: React.FC = () => {
               <Route path="questions/edit/:id" element={<QuestionForm />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="fighter" element={<AdminFighter />} />
+              <Route path="missions" element={<AdminMissions />} />
             </Route>
           </Routes>
-
+          <GlobalChat />
           <footer className="footer" style={{
             padding: '2.5rem 0',
             backgroundColor: 'rgba(15, 23, 42, 0.9)',

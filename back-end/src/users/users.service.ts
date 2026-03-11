@@ -2,10 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserRole } from './schemas/user.schema';
+import { MissionsService } from '../missions/missions.service';
+import { MissionType } from '../missions/schemas/mission.schema';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private readonly missionsService: MissionsService,
+  ) { }
 
   async create(userData: any): Promise<User> {
     const newUser = new this.userModel(userData);
@@ -96,6 +101,7 @@ export class UsersService {
     reward: number,
     level: string,
     index: number,
+    body: any,
   ): Promise<{ user: User; addedReward: number; error?: string } | null> {
     const user = await this.userModel.findById(userId);
     if (!user) return null;
@@ -177,6 +183,9 @@ export class UsersService {
 
     if (isCorrect) {
       query.$set[`levelProgress.${level}`] = index;
+      if (body.stage) {
+        query.$set[`stageProgress.${level}:${body.stage}`] = index;
+      }
       if (!user.answeredQuestions.includes(questionId)) {
         if (!query.$push) query.$push = {};
         query.$push.answeredQuestions = questionId;
@@ -203,6 +212,9 @@ export class UsersService {
       .exec();
 
     if (updatedUser) {
+      // Track Mission Progress
+      await this.missionsService.trackProgress(userId, MissionType.QUIZ_ANSWER, 1);
+
       const updatedRestTimes = updatedUser.restEndTimes || new Map();
       if (updatedRestTimes.get(level) && !isCorrect) {
         return { user: updatedUser, addedReward: 0, error: 'OUT_OF_CHANCES' };

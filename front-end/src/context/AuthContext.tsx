@@ -14,18 +14,23 @@ interface User {
     quizStartTimes?: Record<string, string>; // Maps are serialized as objects in JSON
     restEndTimes?: Record<string, string>;
     levelProgress?: Record<string, number>;
+    stageProgress?: Record<string, number>;
     levelSessionWrongAnswers?: Record<string, number>;
-    answeredQuestions?: string[];
+    answeredQuestions: string[];
+    completedStages: string[];
+    itemProgress: Record<string, number>;
+    chests: number;
 }
 
 
 interface AuthContextType {
     user: User | null;
     token: string | null;
+    isAuthenticated: boolean;
     login: (userData: User, token: string) => void;
     logout: () => void;
-    updateUser: (userData: User) => void;
-    isAuthenticated: boolean;
+    updateUser: (user: User) => void;
+    setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,13 +65,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     };
 
-    const updateUser = (userData: User) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+    const updateUser = (updatedUser: User) => {
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, updateUser, isAuthenticated: !!token }}>
+        <AuthContext.Provider value={{
+            user,
+            token,
+            isAuthenticated: !!token,
+            login,
+            logout,
+            updateUser,
+            setUser,
+        }}>
             {children}
         </AuthContext.Provider>
     );

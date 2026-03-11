@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
-import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight, FileUp, CheckCircle, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight, FileUp, FileDown, CheckCircle, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotification } from '../../context/NotificationContext';
@@ -8,6 +8,7 @@ import { useNotification } from '../../context/NotificationContext';
 interface Question {
     _id: string;
     level: string;
+    stage: number;
     text: string;
     rewardAmount: number;
 }
@@ -106,6 +107,20 @@ const QuestionList: React.FC = () => {
     const { showNotification } = useNotification();
     const LIMIT = 20;
 
+    const handleExport = async () => {
+        try {
+            const response = await api.get('/admin/questions/export', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `suallar_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch {
+            showNotification('Export zamanı xəta baş verdi.', 'error');
+        }
+    };
+
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchQuestions(1);
@@ -184,6 +199,13 @@ const QuestionList: React.FC = () => {
                     <p className="text-muted">Bütün sualların idarə edilməsi ({totalQuestions} sual).</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        onClick={handleExport}
+                        className="btn btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}
+                    >
+                        <FileDown size={20} /> Export Excel
+                    </button>
                     <label className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }}>
                         <FileUp size={20} /> İmport Excel
                         <input type="file" accept=".xlsx" onChange={handleFileUpload} style={{ display: 'none' }} />
@@ -210,6 +232,7 @@ const QuestionList: React.FC = () => {
                     <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
                         <tr>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Səviyyə</th>
+                            <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Mərhələ</th>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Sual Metni</th>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Mükafat</th>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Əməliyyatlar</th>
@@ -221,6 +244,11 @@ const QuestionList: React.FC = () => {
                                 <td style={{ padding: '1.25rem 1.5rem' }}>
                                     <span style={{ padding: '0.25rem 0.75rem', borderRadius: '4px', background: 'var(--primary)20', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700 }}>
                                         {q.level.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td style={{ padding: '1.25rem 1.5rem' }}>
+                                    <span style={{ fontWeight: 700 }}>
+                                        {q.stage}
                                     </span>
                                 </td>
                                 <td style={{ padding: '1.25rem 1.5rem' }}>

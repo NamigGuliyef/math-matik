@@ -10,7 +10,9 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -22,7 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminQuestionsController {
-  constructor(private questionsService: QuestionsService) {}
+  constructor(private questionsService: QuestionsService) { }
 
   @Get()
   async findAll(
@@ -35,6 +37,18 @@ export class AdminQuestionsController {
       Number(limit) || 20,
       search || '',
     );
+  }
+
+  @Get('export')
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.questionsService.exportToExcel();
+    const filename = `suallar_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.send(buffer);
   }
 
   @Get(':id')

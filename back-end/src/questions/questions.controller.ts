@@ -11,8 +11,10 @@ import {
   Request,
 } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
+import { QuizService } from './quiz.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
+import { ChatService } from '../chat/chat.service';
 
 import { ActivityService } from '../activity/activity.service';
 import { ActivityType } from '../activity/schemas/activity.schema';
@@ -21,8 +23,10 @@ import { ActivityType } from '../activity/schemas/activity.schema';
 export class QuestionsController {
   constructor(
     private questionsService: QuestionsService,
+    private quizService: QuizService,
     private usersService: UsersService,
     private activityService: ActivityService,
+    private chatService: ChatService,
   ) { }
 
   @Get()
@@ -43,6 +47,16 @@ export class QuestionsController {
   @Get('level-counts')
   async getLevelQuestionCounts() {
     return this.questionsService.getLevelQuestionCounts();
+  }
+
+  @Get('stages')
+  async getStages(@Query('level') level: string) {
+    return this.questionsService.getStagesByLevel(level);
+  }
+
+  @Get('by-stage')
+  async getByStage(@Query('level') level: string, @Query('stage') stage: string) {
+    return this.questionsService.findByLevelAndStage(level, Number(stage) || 1);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -68,6 +82,7 @@ export class QuestionsController {
       question.rewardAmount,
       level,
       index,
+      body,
     );
 
     // Log activity
@@ -78,6 +93,19 @@ export class QuestionsController {
       `${question.level.toUpperCase()} sualına ${isCorrect ? 'düzgün' : 'səhv'} cavab verdi: "${question.text.substring(0, 30)}..."`,
     );
 
+    // If quiz is finished or chances are out, and it's a finish scenario
+    if (result && isCorrect) {
+      // We can check if the index matches the total question count for that level
+      const counts = await this.questionsService.getLevelQuestionCounts();
+      const totalInLevel = counts[level] || 0;
+
+      if (index === totalInLevel) {
+        // Quiz finished successfully
+        const name = req.user.name;
+        await this.chatService.createSystemMessage(`🔥 ${name} quiz-i ${totalInLevel}/${totalInLevel} nəticə ilə tamamladı!`);
+      }
+    }
+
     return result;
   }
 
@@ -85,6 +113,12 @@ export class QuestionsController {
   @Get('status')
   async getStatus(@Request() req: any) {
     return this.usersService.findById(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('complete-stage')
+  async completeStage(@Request() req: any, @Body() body: { level: string; stage: number }) {
+    return this.quizService.completeStage(req.user.userId, body.level, body.stage);
   }
 
   @Get('landing-stats')

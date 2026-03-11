@@ -15,19 +15,25 @@ interface LandingStats {
     totalQuestions: number;
     totalCorrectAnswers: number;
     totalLevels: number;
+    totalStages: number;
 }
 
 const Home: React.FC = () => {
     const [stats, setStats] = useState<LandingStats | null>(null);
+    const [featuredChar, setFeaturedChar] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await api.get('/questions/landing-stats');
-                setStats(response.data);
+                const [statsRes, charRes] = await Promise.all([
+                    api.get('/questions/landing-stats'),
+                    api.get('/fighter/featured')
+                ]);
+                setStats(statsRes.data);
+                setFeaturedChar(charRes.data);
             } catch (error) {
-                console.error('Error fetching landing stats:', error);
+                console.error('Error fetching landing data:', error);
             } finally {
                 setLoading(false);
             }
@@ -61,7 +67,7 @@ const Home: React.FC = () => {
                             Riyaziyyat Artıq Daha <span className="text-gradient-v2">Maraqlıdır!</span>
                         </h1>
                         <p className="hero-p animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                            Math-Matik ilə darıxdırıcı misalları unudun. İnteraktiv suallar,
+                            Mathematics ilə darıxdırıcı misalları unudun. İnteraktiv suallar,
                             rəqabət dolu reytinq və fərdi inkişaf sistemi ilə riyazi dünyanı kəşf edin.
                         </p>
                         <div className="hero-cta-group animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -95,6 +101,22 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
+            {/* QUICK STATS - Static Powers Display
+            <div className="featured-stats-bar container">
+                <div className="f-stat-item">
+                    <Zap size={18} />
+                    <span>İntellekt: 99</span>
+                </div>
+                <div className="f-stat-item">
+                    <Target size={18} />
+                    <span>Dəqiqlik: 95%</span>
+                </div>
+                <div className="f-stat-item">
+                    <Trophy size={18} />
+                    <span>Rütbə: Magistr</span>
+                </div>
+            </div> */}
+
             {/* STATS STRIP */}
             <section className="stats-strip">
                 <div className="container">
@@ -120,6 +142,11 @@ const Home: React.FC = () => {
                         <div className="stat-mini-card glass-card">
                             <div className="stat-icon-v2 icon-orange"><Zap /></div>
                             <h3>{loading ? '...' : stats?.totalLevels || 0}</h3>
+                            <span>Səviyyə</span>
+                        </div>
+                        <div className="stat-mini-card glass-card">
+                            <div className="stat-icon-v2 icon-pink"><Target /></div>
+                            <h3>{loading ? '...' : stats?.totalStages || 0}</h3>
                             <span>Mərhələ</span>
                         </div>
                     </div>
@@ -156,9 +183,9 @@ const Home: React.FC = () => {
                 <div className="container">
                     <div className="fighter-preview-card glass-card">
                         <div className="fighter-showcase-content">
-                            <div className="fighter-badge">
+                            {/* <div className="fighter-badge">
                                 <Sword size={16} /> <span>Yenilik: Döyüşçü Rejimi</span>
-                            </div>
+                            </div> */}
                             <h2>Riyaziyyatın <span className="text-gradient-v2">Qəhrəmanı Ol!</span></h2>
                             <p>
                                 Misalları həll et, qızıl qazan və öz döyüşçünü təkmilləşdir.
@@ -177,18 +204,35 @@ const Home: React.FC = () => {
                                     <Flame size={20} color="#ef4444" />
                                     <span>Güclü Göstəricilər</span>
                                 </div>
+                                <div className="f-feature">
+                                    <Sword size={20} color="#f59e0b" />
+                                    <span>Döyüş Arenası</span>
+                                </div>
                             </div>
                             <Link to="/fighter" className="btn-main mt-2">
                                 Döyüşçümə Get <ChevronRight size={20} />
                             </Link>
                         </div>
                         <div className="fighter-visual-preview">
-                            <img src="/assets/hero.png" alt="Fighter Preview" className="fighter-preview-img" />
+                            <div className="hero-platform"></div>
+                            {featuredChar ? (
+                                <img
+                                    src={featuredChar.image.startsWith('http') ? featuredChar.image : `${import.meta.env.VITE_API_URL || 'http://localhost:8002'}${featuredChar.image.startsWith('/') ? '' : '/'}${featuredChar.image}`}
+                                    alt={featuredChar.name}
+                                    className="fighter-preview-img featured-char-anim"
+                                />
+                            ) : (
+                                <img src="" alt="" className="" />
+                            )}
+
                             <div className="stat-floater sf-1">
-                                <Sword size={14} color="#ef4444" /> <span>Hücum +25</span>
+                                <Sword size={14} color="#ef4444" /> <span>Hücum +99</span>
                             </div>
                             <div className="stat-floater sf-2">
-                                <Shield size={14} color="#3b82f6" /> <span>Müdafiə +15</span>
+                                <Shield size={14} color="#3b82f6" /> <span>Müdafiə +85</span>
+                            </div>
+                            <div className="stat-floater sf-3">
+                                <Zap size={14} color="#fbbf24" /> <span>Mana +120</span>
                             </div>
                         </div>
                     </div>
@@ -205,7 +249,7 @@ const Home: React.FC = () => {
                         <div className="levels-info">
                             <h2>Platformamızın <span className="text-gradient-v2">Özəllikləri</span></h2>
                             <p>
-                                Mathematic sadəcə bir quiz tətbiqi deyil, o təhsil səyahətində sizin ən yaxın köməkçinizdir.
+                                Mathematics sadəcə bir quiz tətbiqi deyil, o təhsil səyahətində sizin ən yaxın köməkçinizdir.
                             </p>
                             <ul className="levels-list-v2">
                                 <li><CheckCircle size={18} color="var(--success)" /> Dinamik artan mürəkkəblik</li>
@@ -242,7 +286,7 @@ const Home: React.FC = () => {
                         <div className="trust-content">
                             <Shield size={48} color="var(--primary)" />
                             <h2>Təhsiliniz Bizimlə Güvəndədir</h2>
-                            <p>Minlərlə valideyn və müəllim şagirdlərin inkişafını izləmək üçün Math-Matik-ə etibar edir.</p>
+                            <p>Minlərlə valideyn və müəllim şagirdlərin inkişafını izləmək üçün Mathematics-ə etibar edir.</p>
                         </div>
                     </div>
                 </div>

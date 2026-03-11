@@ -43,6 +43,10 @@ export class QuestionsService {
     return this.questionModel.find({ level }).exec();
   }
 
+  async findByLevelAndStage(level: string, stage: number): Promise<Question[]> {
+    return this.questionModel.find({ level, stage }).exec();
+  }
+
   async findOne(id: string): Promise<Question> {
     const question = await this.questionModel.findById(id).exec();
     if (!question) {
@@ -85,14 +89,12 @@ export class QuestionsService {
         const questionData = {
           level: String(row.level || 'level1'),
           text: String(row.text),
-          options: [
-            String(row.option1),
-            String(row.option2),
-            String(row.option3),
-            String(row.option4),
-          ],
+          options: [row.option1, row.option2, row.option3, row.option4]
+            .filter(opt => opt !== undefined && opt !== null && String(opt).trim() !== '')
+            .map(opt => String(opt)),
           correctAnswer: String(row.correctAnswer),
           rewardAmount: Number(row.rewardAmount) || 0.001,
+          stage: (typeof row.stage === 'string' ? parseInt(row.stage.replace(/\D/g, '')) : Number(row.stage)) || 1,
         };
 
         const newQuestion = new this.questionModel(questionData);
@@ -107,19 +109,77 @@ export class QuestionsService {
     return { success: successCount, failed: failedCount };
   }
 
+  async exportToExcel(): Promise<Buffer> {
+    const questions = await this.questionModel.find().lean().exec();
+
+    const rows = questions.map((q: any) => ({
+      level: q.level,
+      text: q.text,
+      option1: q.options?.[0] ?? '',
+      option2: q.options?.[1] ?? '',
+      option3: q.options?.[2] ?? '',
+      option4: q.options?.[3] ?? '',
+      correctAnswer: q.correctAnswer,
+      rewardAmount: q.rewardAmount,
+      stage: q.stage || 1,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Suallar');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    return buffer;
+  }
+
   async getAvailableLevels(): Promise<string[]> {
     return this.questionModel.distinct('level').exec();
   }
 
-  async getLevelQuestionCounts(): Promise<Record<string, number>> {
-    const counts = await this.questionModel.aggregate([
-      { $group: { _id: '$level', count: { $sum: 1 } } },
+  async getLevelQuestionCounts(): Promise<Record<string, { totalQuestions: number; totalStages: number }>> {
+    const stats = await this.questionModel.aggregate([
+      {
+        $group: {
+          _id: '$level',
+          totalQuestions: { $sum: 1 },
+          stages: { $addToSet: '$stage' },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          totalQuestions: 1,
+          totalStages: { $size: '$stages' },
+        },
+      },
     ]);
-    const result: Record<string, number> = {};
-    for (const item of counts) {
-      result[item._id] = item.count;
+
+    const result: Record<string, { totalQuestions: number; totalStages: number }> = {};
+    for (const item of stats) {
+      result[item._id] = {
+        totalQuestions: item.totalQuestions,
+        totalStages: item.totalStages,
+      };
     }
     return result;
+  }
+
+  async getStagesByLevel(level: string): Promise<any[]> {
+    const stages = await this.questionModel.aggregate([
+      { $match: { level } },
+      {
+        $group: {
+          _id: '$stage',
+          totalQuestions: { $sum: 1 },
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    return stages.map(s => ({
+      stage: s._id,
+      totalQuestions: s.totalQuestions
+    }));
   }
 
   async getLandingStats() {
@@ -131,9 +191,15 @@ export class QuestionsService {
       { $group: { _id: null, count: { $sum: '$correctAnswers' } } },
     ]);
 
+    const distinctStages = await this.questionModel.aggregate([
+      { $group: { _id: { level: '$level', stage: '$stage' } } },
+      { $count: 'total' }
+    ]);
+
     return {
       totalQuestions,
       totalLevels: levels.length,
+      totalStages: distinctStages[0]?.total || 0,
       totalStudents,
       totalCorrectAnswers: totalCorrectAnswers[0]?.count || 0,
     };
