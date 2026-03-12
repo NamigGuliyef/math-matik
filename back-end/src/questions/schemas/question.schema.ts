@@ -4,6 +4,9 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class Question extends Document {
   @Prop({ required: true })
+  grade: string;
+
+  @Prop({ required: true })
   level: string;
 
   @Prop({ required: true })

@@ -10,7 +10,7 @@ export class QuestionsService {
   constructor(
     @InjectModel(Question.name) private questionModel: Model<Question>,
     @InjectModel(User.name) private userModel: Model<User>,
-  ) { }
+  ) {}
 
   async create(data: any): Promise<Question> {
     const newQuestion = new this.questionModel(data);
@@ -25,11 +25,12 @@ export class QuestionsService {
     const skip = (page - 1) * limit;
     const query = search
       ? {
-        $or: [
-          { text: { $regex: search, $options: 'i' } },
-          { level: { $regex: search, $options: 'i' } },
-        ],
-      }
+          $or: [
+            { text: { $regex: search, $options: 'i' } },
+            { level: { $regex: search, $options: 'i' } },
+            { grade: { $regex: search, $options: 'i' } },
+          ],
+        }
       : {};
 
     const [questions, total] = await Promise.all([
@@ -39,12 +40,16 @@ export class QuestionsService {
     return { questions, total };
   }
 
-  async findByLevel(level: string): Promise<Question[]> {
-    return this.questionModel.find({ level }).exec();
+  async findByLevel(grade: string, level: string): Promise<Question[]> {
+    return this.questionModel.find({ grade, level }).exec();
   }
 
-  async findByLevelAndStage(level: string, stage: number): Promise<Question[]> {
-    return this.questionModel.find({ level, stage }).exec();
+  async findByLevelAndStage(
+    grade: string,
+    level: string,
+    stage: number,
+  ): Promise<Question[]> {
+    return this.questionModel.find({ grade, level, stage }).exec();
   }
 
   async findOne(id: string): Promise<Question> {
@@ -87,14 +92,21 @@ export class QuestionsService {
     for (const row of data as any[]) {
       try {
         const questionData = {
+          grade: String(row.grade || row.class || '5A'),
           level: String(row.level || 'level1'),
           text: String(row.text),
           options: [row.option1, row.option2, row.option3, row.option4]
-            .filter(opt => opt !== undefined && opt !== null && String(opt).trim() !== '')
-            .map(opt => String(opt)),
+            .filter(
+              (opt) =>
+                opt !== undefined && opt !== null && String(opt).trim() !== '',
+            )
+            .map((opt) => String(opt)),
           correctAnswer: String(row.correctAnswer),
           rewardAmount: Number(row.rewardAmount) || 0.001,
-          stage: (typeof row.stage === 'string' ? parseInt(row.stage.replace(/\D/g, '')) : Number(row.stage)) || 1,
+          stage:
+            (typeof row.stage === 'string'
+              ? parseInt(row.stage.replace(/\D/g, ''))
+              : Number(row.stage)) || 1,
         };
 
         const newQuestion = new this.questionModel(questionData);
@@ -113,6 +125,7 @@ export class QuestionsService {
     const questions = await this.questionModel.find().lean().exec();
 
     const rows = questions.map((q: any) => ({
+      grade: q.grade,
       level: q.level,
       text: q.text,
       option1: q.options?.[0] ?? '',
@@ -132,15 +145,22 @@ export class QuestionsService {
     return buffer;
   }
 
-  async getAvailableLevels(): Promise<string[]> {
-    return this.questionModel.distinct('level').exec();
+  async getAvailableClasses(): Promise<string[]> {
+    return this.questionModel.distinct('grade').exec();
   }
 
-  async getLevelQuestionCounts(): Promise<Record<string, { totalQuestions: number; totalStages: number }>> {
+  async getAvailableLevels(grade?: string): Promise<string[]> {
+    const query = grade ? { grade } : {};
+    return this.questionModel.distinct('level', query).exec();
+  }
+
+  async getLevelQuestionCounts(): Promise<
+    Record<string, { totalQuestions: number; totalStages: number }>
+  > {
     const stats = await this.questionModel.aggregate([
       {
         $group: {
-          _id: '$level',
+          _id: { grade: '$grade', level: '$level' },
           totalQuestions: { $sum: 1 },
           stages: { $addToSet: '$stage' },
         },
@@ -154,54 +174,66 @@ export class QuestionsService {
       },
     ]);
 
-    const result: Record<string, { totalQuestions: number; totalStages: number }> = {};
+    const result: Record<
+      string,
+      { totalQuestions: number; totalStages: number }
+    > = {};
     for (const item of stats) {
-      result[item._id] = {
+      const key = `${item._id.grade}:${item._id.level}`;
+      result[key] = {
         totalQuestions: item.totalQuestions,
         totalStages: item.totalStages,
       };
+      // Fallback for UI if it only sends level
+      if (!result[item._id.level]) {
+        result[item._id.level] = result[key];
+      }
     }
     return result;
   }
 
-  async getStagesByLevel(level: string): Promise<any[]> {
+  async getStagesByLevel(grade: string, level: string): Promise<any[]> {
     const stages = await this.questionModel.aggregate([
-      { $match: { level } },
+      { $match: { grade, level } },
       {
         $group: {
           _id: '$stage',
           totalQuestions: { $sum: 1 },
-        }
+        },
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
     ]);
 
-    return stages.map(s => ({
+    return stages.map((s) => ({
       stage: s._id,
-      totalQuestions: s.totalQuestions
+      totalQuestions: s.totalQuestions,
     }));
   }
 
   async getLandingStats() {
     const totalQuestions = await this.questionModel.countDocuments().exec();
     const levels = await this.questionModel.distinct('level').exec();
-    const totalStudents = await this.userModel.countDocuments({ role: UserRole.STUDENT }).exec();
+    const totalStudents = await this.userModel
+      .countDocuments({ role: UserRole.STUDENT })
+      .exec();
 
     const totalCorrectAnswers = await this.userModel.aggregate([
       { $group: { _id: null, count: { $sum: '$correctAnswers' } } },
     ]);
 
     const distinctStages = await this.questionModel.aggregate([
-      { $group: { _id: { level: '$level', stage: '$stage' } } },
-      { $count: 'total' }
+      {
+        $group: { _id: { grade: '$grade', level: '$level', stage: '$stage' } },
+      },
+      { $count: 'total' },
     ]);
 
     return {
-      totalQuestions,
+      totalQuestions: totalQuestions as number,
       totalLevels: levels.length,
-      totalStages: distinctStages[0]?.total || 0,
-      totalStudents,
-      totalCorrectAnswers: totalCorrectAnswers[0]?.count || 0,
+      totalStages: (distinctStages[0] as any)?.total || 0,
+      totalStudents: totalStudents as number,
+      totalCorrectAnswers: (totalCorrectAnswers[0] as any)?.count || 0,
     };
   }
 }

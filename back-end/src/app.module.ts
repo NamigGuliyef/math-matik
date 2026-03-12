@@ -33,4 +33,4 @@ import { MissionsModule } from './missions/missions.module';
   controllers: [LeaderboardController],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}

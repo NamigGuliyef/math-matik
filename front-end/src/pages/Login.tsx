@@ -7,9 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
 const Login: React.FC = () => {
-    const [name, setName] = useState('');
-    const [surname, setSurname] = useState('');
-    const [fatherName, setFatherName] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +20,7 @@ const Login: React.FC = () => {
         setError('');
 
         try {
-            const response = await api.post('/auth/login', { name, surname, fatherName, password });
+            const response = await api.post('/auth/login', { email, password });
             login(response.data.user, response.data.access_token);
             navigate('/dashboard');
         } catch (err: any) {
@@ -63,47 +61,16 @@ const Login: React.FC = () => {
                 </AnimatePresence>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="auth-name-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
-                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
-                            <label className="input-label-v2">Ad</label>
-                            <div className="input-wrapper-v2">
-                                <User className="input-icon-v2" size={18} />
-                                <input
-                                    className="input-v2"
-                                    type="text"
-                                    placeholder="Adınız"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
-                            <label className="input-label-v2">Soyad</label>
-                            <div className="input-wrapper-v2">
-                                <User className="input-icon-v2" size={18} />
-                                <input
-                                    className="input-v2"
-                                    type="text"
-                                    placeholder="Soyadınız"
-                                    value={surname}
-                                    onChange={(e) => setSurname(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-                    </div>
-
                     <div className="input-group-v2">
-                        <label className="input-label-v2">Atasının Adı</label>
+                        <label className="input-label-v2">Email</label>
                         <div className="input-wrapper-v2">
                             <User className="input-icon-v2" size={18} />
                             <input
                                 className="input-v2"
-                                type="text"
-                                placeholder="Ata adınız"
-                                value={fatherName}
-                                onChange={(e) => setFatherName(e.target.value)}
+                                type="email"
+                                placeholder="Email ünvanınız"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>

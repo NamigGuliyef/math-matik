@@ -5,6 +5,8 @@ interface User {
     name: string;
     surname: string;
     fatherName: string;
+    email: string;
+    grade: string;
     role: string;
     balance: number;
     level: string;

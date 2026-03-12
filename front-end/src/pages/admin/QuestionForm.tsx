@@ -2,7 +2,95 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/client';
 import { ChevronLeft, Save } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
+
+const CustomSelect: React.FC<{
+    label: string,
+    value: string,
+    options: string[],
+    onChange: (val: string) => void,
+    placeholder?: string,
+    width?: string
+}> = ({ label, value, options, onChange, placeholder, width = '100%' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: width, position: 'relative' }} ref={dropdownRef}>
+            <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{label}</label>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    padding: '0.6rem 0.8rem',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border)',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s',
+                    height: '42px',
+                    boxSizing: 'border-box'
+                }}
+            >
+                <span>{value || placeholder}</span>
+                <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.6 }} />
+            </div>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '0.4rem',
+                    background: '#1e293b',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                    zIndex: 100,
+                    maxHeight: '180px', // Roughly 5 items (36px each)
+                    overflowY: 'auto',
+                    padding: '0.25rem'
+                }} className="custom-scrollbar-v2">
+                    {options.map(opt => (
+                        <div
+                            key={opt}
+                            onClick={() => { onChange(opt); setIsOpen(false); }}
+                            style={{
+                                padding: '0.6rem 0.8rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                transition: 'all 0.1s',
+                                background: value === opt ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                color: value === opt ? 'var(--primary)' : 'white',
+                                fontWeight: value === opt ? 700 : 400
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                            onMouseLeave={e => e.currentTarget.style.background = value === opt ? 'rgba(99, 102, 241, 0.1)' : 'transparent'}
+                        >
+                            {opt}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const QuestionForm: React.FC = () => {
     const { id } = useParams();
@@ -11,6 +99,7 @@ const QuestionForm: React.FC = () => {
     const isEdit = !!id;
 
     const [formData, setFormData] = useState({
+        grade: 'Sinif 1',
         level: 'level1',
         stage: 1,
         text: '',
@@ -30,6 +119,7 @@ const QuestionForm: React.FC = () => {
                     const question = response.data;
                     if (question) {
                         setFormData({
+                            grade: question.grade || 'Sinif 1',
                             level: question.level,
                             stage: question.stage || 1,
                             text: question.text,
@@ -92,35 +182,38 @@ const QuestionForm: React.FC = () => {
             </div>
 
             <form className="glass-card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }} onSubmit={handleSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label>Səviyyə</label>
-                        <select
-                            name="level"
-                            style={{
-                                padding: '0.75rem',
-                                borderRadius: '8px',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid var(--border)',
-                                color: 'white'
-                            }}
-                            value={formData.level}
-                            onChange={handleChange}
-                        >
-                            <option value="level1" style={{ background: '#1e293b' }}>Səviyyə 1</option>
-                            <option value="level2" style={{ background: '#1e293b' }}>Səviyyə 2</option>
-                            <option value="level3" style={{ background: '#1e293b' }}>Səviyyə 3</option>
-                            <option value="level4" style={{ background: '#1e293b' }}>Səviyyə 4</option>
-                            <option value="level5" style={{ background: '#1e293b' }}>Səviyyə 5</option>
-                        </select>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label>Mərhələ (Stage)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+                    <CustomSelect
+                        label="Sinif"
+                        value={formData.grade}
+                        options={Array.from({ length: 11 }, (_, i) => i + 1).map(num => `Sinif ${num}`)}
+                        onChange={(val) => setFormData(prev => ({ ...prev, grade: val }))}
+                        width="140px"
+                    />
+                    <CustomSelect
+                        label="Səviyyə"
+                        value={formData.level === 'level1' ? 'Səviyyə 1' : `Səviyyə ${formData.level.replace('level', '')}`}
+                        options={Array.from({ length: 10 }, (_, i) => i + 1).map(num => `Səviyyə ${num}`)}
+                        onChange={(val) => setFormData(prev => ({ ...prev, level: `level${val.replace('Səviyyə ', '')}` }))}
+                        width="140px"
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '140px' }}>
+                        <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Mərhələ (Stage)</label>
                         <input
                             type="number"
                             name="stage"
                             min="1"
-                            style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white' }}
+                            style={{ 
+                                padding: '0.6rem 0.8rem', 
+                                borderRadius: '8px', 
+                                background: 'rgba(255,255,255,0.05)', 
+                                border: '1px solid var(--border)', 
+                                color: 'white',
+                                width: '100%',
+                                height: '42px',
+                                boxSizing: 'border-box',
+                                outline: 'none'
+                            }}
                             value={formData.stage}
                             onChange={handleChange}
                             required

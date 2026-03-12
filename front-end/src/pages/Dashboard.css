@@ -5,11 +5,19 @@
 .dashboard-page-wrap {
     position: relative;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
     background:
         radial-gradient(ellipse 55% 35% at 8% 5%, rgba(99, 102, 241, 0.12) 0%, transparent 70%),
         radial-gradient(ellipse 45% 30% at 92% 95%, rgba(139, 92, 246, 0.12) 0%, transparent 70%),
         radial-gradient(ellipse 35% 25% at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 65%);
+    padding-left: 100px; /* Space for sidebar */
+    transition: padding 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-page-wrap {
+        padding-left: 0;
+    }
 }
 
 /* ── Grid overlay ── */
@@ -669,6 +677,133 @@
     font-size: 1.5rem;
     line-height: 1;
     display: block;
+}
+
+/* ============================================================
+   SIDEBAR NAVIGATION
+   ============================================================ */
+
+.g-sidebar-nav {
+    position: fixed;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0.75rem;
+    background: rgba(15, 17, 42, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 100px;
+    z-index: 1000;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    max-height: 85vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.g-sidebar-label {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--primary);
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    pointer-events: none;
+}
+
+.g-sidebar-nav::-webkit-scrollbar {
+    width: 0;
+}
+
+.g-sidebar-item {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.g-sidebar-item-num {
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.g-sidebar-item-tag {
+    font-size: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    margin-top: -2px;
+}
+
+.g-sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: white;
+    transform: scale(1.1);
+}
+
+.g-sidebar-item--active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+}
+
+.g-sidebar-item--active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid var(--primary);
+    opacity: 0.4;
+    animation: sidebarPulse 2s infinite;
+}
+
+@keyframes sidebarPulse {
+    0% { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(1.4); opacity: 0; }
+}
+
+@media (max-width: 1024px) {
+    .g-sidebar-nav {
+        top: auto;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        flex-direction: row;
+        max-height: unset;
+        width: auto;
+        max-width: 90vw;
+        padding: 0.75rem 1.25rem;
+        border-radius: 20px;
+    }
+
+    .g-sidebar-label {
+        writing-mode: horizontal-tb;
+        transform: none;
+        margin-bottom: 0;
+        margin-right: 0.75rem;
+        font-size: 0.55rem;
+    }
 }
 
 .level-info {

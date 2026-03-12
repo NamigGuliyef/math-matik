@@ -24,7 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminQuestionsController {
-  constructor(private questionsService: QuestionsService) { }
+  constructor(private questionsService: QuestionsService) {}
 
   @Get()
   async findAll(

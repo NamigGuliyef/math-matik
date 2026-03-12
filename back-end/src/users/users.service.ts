@@ -12,11 +12,15 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Battle.name) private battleModel: Model<Battle>,
     private readonly missionsService: MissionsService,
-  ) { }
+  ) {}
 
   async create(userData: any): Promise<User> {
     const newUser = new this.userModel(userData);
     return newUser.save();
+  }
+
+  async findOneByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
   }
 
   async findOneByNameAndFatherName(
@@ -43,11 +47,11 @@ export class UsersService {
 
   async syncBattleWins(userId: string): Promise<number> {
     const winCount = await this.battleModel.countDocuments({
-      winnerId: new Types.ObjectId(userId)
+      winnerId: new Types.ObjectId(userId),
     });
 
     await this.userModel.findByIdAndUpdate(userId, {
-      $set: { totalBattlesWon: winCount }
+      $set: { totalBattlesWon: winCount },
     });
 
     return winCount;
@@ -87,7 +91,9 @@ export class UsersService {
 
         if (elapsed > quizDuration) {
           // Session expired. Calculate when rest SHOULD end for this level.
-          const scheduledRestEnd = new Date(currentQuizStartTime.getTime() + quizDuration + restDuration);
+          const scheduledRestEnd = new Date(
+            currentQuizStartTime.getTime() + quizDuration + restDuration,
+          );
 
           if (now < scheduledRestEnd) {
             // Still in the calculated rest period
@@ -118,6 +124,7 @@ export class UsersService {
     isCorrect: boolean,
     reward: number,
     level: string,
+    grade: string,
     index: number,
     body: any,
   ): Promise<{ user: User; addedReward: number; error?: string } | null> {
@@ -150,7 +157,9 @@ export class UsersService {
       const quizDuration = 20 * 60 * 1000;
       const restDuration = 60 * 60 * 1000;
       // Calculate rest end relative to when the quiz SHOULD have ended
-      const restEndTime = new Date(currentQuizStartTime.getTime() + quizDuration + restDuration);
+      const restEndTime = new Date(
+        currentQuizStartTime.getTime() + quizDuration + restDuration,
+      );
 
       const updatedUser = await this.userModel
         .findByIdAndUpdate(
@@ -200,9 +209,9 @@ export class UsersService {
     let addedReward = 0;
 
     if (isCorrect) {
-      query.$set[`levelProgress.${level}`] = index;
+      query.$set[`levelProgress.${grade}:${level}`] = index;
       if (body.stage) {
-        query.$set[`stageProgress.${level}:${body.stage}`] = index;
+        query.$set[`stageProgress.${grade}:${level}:${body.stage}`] = index;
       }
       if (!user.answeredQuestions.includes(questionId)) {
         if (!query.$push) query.$push = {};
@@ -231,7 +240,11 @@ export class UsersService {
 
     if (updatedUser) {
       // Track Mission Progress
-      await this.missionsService.trackProgress(userId, MissionType.QUIZ_ANSWER, 1);
+      await this.missionsService.trackProgress(
+        userId,
+        MissionType.QUIZ_ANSWER,
+        1,
+      );
 
       const updatedRestTimes = updatedUser.restEndTimes || new Map();
       if (updatedRestTimes.get(level) && !isCorrect) {
@@ -256,15 +269,46 @@ export class UsersService {
   async getLeaderboard() {
     return this.userModel
       .find({ role: UserRole.STUDENT })
-      .select('name surname fatherName balance level correctAnswers profilePicture')
+      .select(
+        'name surname fatherName grade balance level correctAnswers profilePicture totalBattlesWon',
+      )
       .sort({ correctAnswers: -1 })
       .limit(50)
       .exec();
   }
 
-  async updateProfilePicture(userId: string, imageUrl: string): Promise<User | null> {
+  async getClassRanking() {
+    // Rank classes based on total correct answers and total wins of students in that class
+    const stats = await this.userModel.aggregate([
+      { $match: { role: UserRole.STUDENT } },
+      {
+        $group: {
+          _id: '$grade',
+          totalCorrectAnswers: { $sum: '$correctAnswers' },
+          totalWins: { $sum: '$totalBattlesWon' },
+        },
+      },
+      { $sort: { totalCorrectAnswers: -1, totalWins: -1 } },
+    ]);
+
+    return stats.map((s, index) => ({
+      rank: index + 1,
+      grade: s._id,
+      totalCorrectAnswers: s.totalCorrectAnswers,
+      totalWins: s.totalWins,
+    }));
+  }
+
+  async updateProfilePicture(
+    userId: string,
+    imageUrl: string,
+  ): Promise<User | null> {
     return this.userModel
-      .findByIdAndUpdate(userId, { $set: { profilePicture: imageUrl } }, { new: true })
+      .findByIdAndUpdate(
+        userId,
+        { $set: { profilePicture: imageUrl } },
+        { new: true },
+      )
       .exec();
   }
 }

@@ -7,6 +7,7 @@ import { useNotification } from '../../context/NotificationContext';
 
 interface Question {
     _id: string;
+    grade: string;
     level: string;
     stage: number;
     text: string;
@@ -220,8 +221,8 @@ const QuestionList: React.FC = () => {
                 <Search size={20} className="text-muted" style={{ marginLeft: '1rem' }} />
                 <input
                     type="text"
-                    placeholder="Sual və ya səviyyə üzrə axtar..."
-                    style={{ background: 'none', border: 'none', padding: '1rem', width: '100%', outline: 'none', fontSize: '1rem' }}
+                    placeholder="Sual, sinif və ya səviyyə üzrə axtar..."
+                    style={{ background: 'none', border: 'none', padding: '1rem', width: '100%', outline: 'none', fontSize: '1rem', color: 'white' }}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -231,6 +232,7 @@ const QuestionList: React.FC = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
                         <tr>
+                            <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Sinif</th>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Səviyyə</th>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Mərhələ</th>
                             <th style={{ padding: '1.25rem 1.5rem', fontWeight: 700 }}>Sual Metni</th>
@@ -241,6 +243,11 @@ const QuestionList: React.FC = () => {
                     <tbody>
                         {questions.map((q) => (
                             <tr key={q._id} style={{ borderTop: '1px solid var(--border)', transition: 'background 0.2s' }} className="table-row-hover">
+                                <td style={{ padding: '1.25rem 1.5rem' }}>
+                                    <span style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                                        {q.grade}
+                                    </span>
+                                </td>
                                 <td style={{ padding: '1.25rem 1.5rem' }}>
                                     <span style={{ padding: '0.25rem 0.75rem', borderRadius: '4px', background: 'var(--primary)20', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700 }}>
                                         {q.level.toUpperCase()}

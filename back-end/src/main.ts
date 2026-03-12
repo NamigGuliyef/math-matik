@@ -29,8 +29,12 @@ async function bootstrap() {
   });
 
   // Vercel-də /tmp qovluğu yazmaq üçün açıqdır, amma biz artıq mövcud olan şəkilləri serve etməliyik
-  const uploadPath = process.env.VERCEL ? join(process.cwd(), 'uploads') : join(process.cwd(), 'uploads');
-  const tempUploadPath = process.env.VERCEL ? join('/tmp', 'uploads') : join(process.cwd(), 'uploads');
+  const uploadPath = process.env.VERCEL
+    ? join(process.cwd(), 'uploads')
+    : join(process.cwd(), 'uploads');
+  const tempUploadPath = process.env.VERCEL
+    ? join('/tmp', 'uploads')
+    : join(process.cwd(), 'uploads');
 
   if (!existsSync(tempUploadPath)) {
     mkdirSync(tempUploadPath, { recursive: true });
@@ -56,7 +60,7 @@ async function bootstrap() {
 
 // Development mode listener
 if (process.env.NODE_ENV !== 'production') {
-  bootstrap().then(app => {
+  bootstrap().then((app) => {
     const port = process.env.PORT || 8002;
     app.listen(port, () => {
       console.log(`Application is running on: http://localhost:${port}`);

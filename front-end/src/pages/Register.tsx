@@ -10,6 +10,8 @@ const Register: React.FC = () => {
         name: '',
         surname: '',
         fatherName: '',
+        grade: '',
+        email: '',
         password: '',
         confirmPassword: ''
     });
@@ -36,6 +38,8 @@ const Register: React.FC = () => {
                 name: formData.name,
                 surname: formData.surname,
                 fatherName: formData.fatherName,
+                grade: formData.grade,
+                email: formData.email,
                 password: formData.password
             });
             navigate('/login', { state: { message: 'Qeydiyyat uğurla tamamlandı. Giriş edə bilərsiniz.' } });
@@ -53,7 +57,7 @@ const Register: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
                 className="auth-card-v2"
-                style={{ maxWidth: '550px' }}
+                style={{ maxWidth: '500px' }}
             >
                 <div className="auth-header-v2">
                     <div className="auth-icon-wrap" style={{ background: 'var(--secondary)', color: 'white' }}>
@@ -111,16 +115,57 @@ const Register: React.FC = () => {
                         </div>
                     </div>
 
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
+                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
+                            <label className="input-label-v2">Atasının Adı</label>
+                            <div className="input-wrapper-v2">
+                                <User className="input-icon-v2" size={18} />
+                                <input
+                                    name="fatherName"
+                                    className="input-v2"
+                                    type="text"
+                                    placeholder="Ata adınız"
+                                    value={formData.fatherName}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="input-group-v2" style={{ flex: 1, marginBottom: 0 }}>
+                            <label className="input-label-v2">Sinif</label>
+                            <div className="input-wrapper-v2">
+                                <User className="input-icon-v2" size={18} />
+                                <select
+                                    name="grade"
+                                    className="input-v2"
+                                    value={formData.grade}
+                                    onChange={(e: any) => setFormData({ ...formData, grade: e.target.value })}
+                                    required
+                                    style={{ appearance: 'none' }}
+                                >
+                                    <option value="" disabled>Sinif seçin</option>
+                                    {Array.from({ length: 11 }, (_, i) => i + 1).flatMap(i => 
+                                        ['A', 'B', 'C', 'D'].map(letter => (
+                                            <option key={`${i}${letter}`} value={`${i}${letter}`} style={{ background: '#1e293b' }}>
+                                                {i}{letter}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="input-group-v2">
-                        <label className="input-label-v2">Atasının Adı</label>
+                        <label className="input-label-v2">Email</label>
                         <div className="input-wrapper-v2">
                             <User className="input-icon-v2" size={18} />
                             <input
-                                name="fatherName"
+                                name="email"
                                 className="input-v2"
-                                type="text"
-                                placeholder="Ata adınız"
-                                value={formData.fatherName}
+                                type="email"
+                                placeholder="Email ünvanınız"
+                                value={formData.email}
                                 onChange={handleChange}
                                 required
                             />

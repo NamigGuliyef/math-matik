@@ -1,55 +1,65 @@
-import { Controller, Get, Post, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { FighterService } from './fighter.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('fighter')
 export class FighterController {
-    constructor(private readonly fighterService: FighterService) { }
+  constructor(private readonly fighterService: FighterService) {}
 
-    @Get('featured')
-    async getFeaturedCharacter() {
-        return this.fighterService.getFeaturedCharacter();
-    }
+  @Get('featured')
+  async getFeaturedCharacter() {
+    return this.fighterService.getFeaturedCharacter();
+  }
 
-    @Get('my-fighter')
-    @UseGuards(JwtAuthGuard)
-    async getFighter(@Request() req: any) {
-        return this.fighterService.getUserFighter(req.user.userId);
-    }
+  @Get('my-fighter')
+  @UseGuards(JwtAuthGuard)
+  async getFighter(@Request() req: any) {
+    return this.fighterService.getUserFighter(req.user.userId);
+  }
 
-    @Get('shop')
-    @UseGuards(JwtAuthGuard)
-    async getShop() {
-        return this.fighterService.getShopItems();
-    }
+  @Get('shop')
+  @UseGuards(JwtAuthGuard)
+  async getShop() {
+    return this.fighterService.getShopItems();
+  }
 
-    @Post('purchase/:itemId')
-    @UseGuards(JwtAuthGuard)
-    async purchase(@Request() req: any, @Param('itemId') itemId: string) {
-        return this.fighterService.purchaseItem(req.user.userId, itemId);
-    }
+  @Post('purchase/:itemId')
+  @UseGuards(JwtAuthGuard)
+  async purchase(@Request() req: any, @Param('itemId') itemId: string) {
+    return this.fighterService.purchaseItem(req.user.userId, itemId);
+  }
 
-    @Post('purchase-char/:charId')
-    @UseGuards(JwtAuthGuard)
-    async purchaseChar(@Request() req: any, @Param('charId') charId: string) {
-        return this.fighterService.purchaseCharacter(req.user.userId, charId);
-    }
+  @Post('purchase-char/:charId')
+  @UseGuards(JwtAuthGuard)
+  async purchaseChar(@Request() req: any, @Param('charId') charId: string) {
+    return this.fighterService.purchaseCharacter(req.user.userId, charId);
+  }
 
-    @Post('equip/:inventoryId')
-    @UseGuards(JwtAuthGuard)
-    async equip(@Request() req: any, @Param('inventoryId') inventoryId: string) {
-        return this.fighterService.equipItem(req.user.userId, inventoryId);
-    }
+  @Post('equip/:inventoryId')
+  @UseGuards(JwtAuthGuard)
+  async equip(@Request() req: any, @Param('inventoryId') inventoryId: string) {
+    return this.fighterService.equipItem(req.user.userId, inventoryId);
+  }
 
-    @Post('unequip/:inventoryId')
-    @UseGuards(JwtAuthGuard)
-    async unequip(@Request() req: any, @Param('inventoryId') inventoryId: string) {
-        return this.fighterService.unequipItem(req.user.userId, inventoryId);
-    }
+  @Post('unequip/:inventoryId')
+  @UseGuards(JwtAuthGuard)
+  async unequip(
+    @Request() req: any,
+    @Param('inventoryId') inventoryId: string,
+  ) {
+    return this.fighterService.unequipItem(req.user.userId, inventoryId);
+  }
 
-    @Post('claim-progress/:itemId')
-    @UseGuards(JwtAuthGuard)
-    async claimProgress(@Request() req: any, @Param('itemId') itemId: string) {
-        return this.fighterService.claimProgressItem(req.user.userId, itemId);
-    }
+  @Post('claim-progress/:itemId')
+  @UseGuards(JwtAuthGuard)
+  async claimProgress(@Request() req: any, @Param('itemId') itemId: string) {
+    return this.fighterService.claimProgressItem(req.user.userId, itemId);
+  }
 }

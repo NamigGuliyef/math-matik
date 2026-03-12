@@ -27,7 +27,7 @@ export class QuestionsController {
     private usersService: UsersService,
     private activityService: ActivityService,
     private chatService: ChatService,
-  ) { }
+  ) {}
 
   @Get()
   async getAll() {
@@ -35,13 +35,21 @@ export class QuestionsController {
   }
 
   @Get('by-level')
-  async getByLevel(@Query('level') level: string) {
-    return this.questionsService.findByLevel(level);
+  async getByLevel(
+    @Query('grade') grade: string,
+    @Query('level') level: string,
+  ) {
+    return this.questionsService.findByLevel(grade, level);
+  }
+
+  @Get('available-classes')
+  async getAvailableClasses() {
+    return this.questionsService.getAvailableClasses();
   }
 
   @Get('available-levels')
-  async getAvailableLevels() {
-    return this.questionsService.getAvailableLevels();
+  async getAvailableLevels(@Query('grade') grade?: string) {
+    return this.questionsService.getAvailableLevels(grade);
   }
 
   @Get('level-counts')
@@ -50,13 +58,24 @@ export class QuestionsController {
   }
 
   @Get('stages')
-  async getStages(@Query('level') level: string) {
-    return this.questionsService.getStagesByLevel(level);
+  async getStages(
+    @Query('grade') grade: string,
+    @Query('level') level: string,
+  ) {
+    return this.questionsService.getStagesByLevel(grade, level);
   }
 
   @Get('by-stage')
-  async getByStage(@Query('level') level: string, @Query('stage') stage: string) {
-    return this.questionsService.findByLevelAndStage(level, Number(stage) || 1);
+  async getByStage(
+    @Query('grade') grade: string,
+    @Query('level') level: string,
+    @Query('stage') stage: string,
+  ) {
+    return this.questionsService.findByLevelAndStage(
+      grade,
+      level,
+      Number(stage) || 1,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -72,7 +91,7 @@ export class QuestionsController {
     @Body() body: any,
     @Request() req: any,
   ) {
-    const { answer, level, index } = body;
+    const { answer, grade, level, index } = body;
     const question = await this.questionsService.findOne(id);
     const isCorrect = question.correctAnswer === answer;
     const result = await this.usersService.addAnsweredQuestion(
@@ -80,6 +99,7 @@ export class QuestionsController {
       id,
       isCorrect,
       question.rewardAmount,
+      grade,
       level,
       index,
       body,
@@ -97,12 +117,16 @@ export class QuestionsController {
     if (result && isCorrect) {
       // We can check if the index matches the total question count for that level
       const counts = await this.questionsService.getLevelQuestionCounts();
-      const totalInLevel = counts[level] || 0;
+      const levelKey = `${grade}:${level}`;
+      const levelStats = counts[levelKey] || counts[level];
+      const totalInLevel = levelStats?.totalQuestions || 0;
 
       if (index === totalInLevel) {
         // Quiz finished successfully
         const name = req.user.name;
-        await this.chatService.createSystemMessage(`🔥 ${name} quiz-i ${totalInLevel}/${totalInLevel} nəticə ilə tamamladı!`);
+        await this.chatService.createSystemMessage(
+          `🔥 ${name} quiz-i ${totalInLevel}/${totalInLevel} nəticə ilə tamamladı!`,
+        );
       }
     }
 
@@ -118,8 +142,17 @@ export class QuestionsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('complete-stage')
-  async completeStage(@Request() req: any, @Body() body: { level: string; stage: number }) {
-    return this.quizService.completeStage(req.user.userId, body.level, body.stage);
+  async completeStage(
+    @Request() req: any,
+    @Body() body: { grade: string; level: string; stage: number },
+  ) {
+    const userId = req.user.userId;
+    return this.quizService.completeStage(
+      userId,
+      body.grade,
+      body.level,
+      body.stage,
+    );
   }
 
   @Get('landing-stats')

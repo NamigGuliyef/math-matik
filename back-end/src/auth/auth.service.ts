@@ -11,7 +11,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private activityService: ActivityService,
-  ) { }
+  ) {}
 
   async register(userData: any) {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -38,6 +38,8 @@ export class AuthService {
       name: user.name,
       surname: user.surname,
       fatherName: user.fatherName,
+      email: user.email,
+      grade: user.grade,
     };
 
     // Log activity (only for students, admins might clutter)
@@ -70,17 +72,8 @@ export class AuthService {
     };
   }
 
-  async validateUser(
-    name: string,
-    surname: string,
-    fatherName: string,
-    pass: string,
-  ): Promise<any> {
-    const user = await this.usersService.findOneByNameAndFatherName(
-      name,
-      surname,
-      fatherName,
-    );
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.usersService.findOneByEmail(email);
     if (user && (await bcrypt.compare(pass, user.password))) {
       return user;
     }

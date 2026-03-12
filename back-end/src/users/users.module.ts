@@ -12,7 +12,7 @@ import { Battle, BattleSchema } from '../fighter/schemas/battle.schema';
   imports: [
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
-      { name: Battle.name, schema: BattleSchema }
+      { name: Battle.name, schema: BattleSchema },
     ]),
     MissionsModule,
     CloudinaryModule,
@@ -21,4 +21,4 @@ import { Battle, BattleSchema } from '../fighter/schemas/battle.schema';
   providers: [UsersService],
   exports: [UsersService, MongooseModule],
 })
-export class UsersModule { }
+export class UsersModule {}

@@ -10,7 +10,7 @@ const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
 
 
 const Quiz: React.FC = () => {
-    const { level, stage } = useParams<{ level: string, stage: string }>();
+    const { grade, level, stage } = useParams<{ grade: string, level: string, stage: string }>();
     const [questions, setQuestions] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -28,10 +28,10 @@ const Quiz: React.FC = () => {
 
     // --- Robust Reactive Rest Logic ---
     // Derived rest status to ensure immediate UI feedback even before useEffect runs
-    const currentRestEndTime = user?.restEndTimes?.[level!];
+    const currentRestEndTime = user?.restEndTimes?.[`${grade}:${level}`];
     const isResting = isRestingState || (currentRestEndTime ? new Date() < new Date(currentRestEndTime) : false);
 
-    const currentWrongAnswers = user?.levelSessionWrongAnswers?.[level!] || 0;
+    const currentWrongAnswers = user?.levelSessionWrongAnswers?.[`${grade}:${level}`] || 0;
     const chances = 5 - currentWrongAnswers;
 
     useEffect(() => {
@@ -51,7 +51,7 @@ const Quiz: React.FC = () => {
                     setIsRestingState(false);
                     // Clear it from context if it's expired
                     const updatedRestEndTimes = { ...user.restEndTimes };
-                    delete updatedRestEndTimes[level];
+                    delete updatedRestEndTimes[`${grade}:${level}`];
                     updateUser({ ...user, restEndTimes: updatedRestEndTimes });
                 }
             }
@@ -60,12 +60,14 @@ const Quiz: React.FC = () => {
             if (user.role === 'student' && level) {
                 const levelIndex = LEVELS.indexOf(level);
                 if (levelIndex > 0) {
-                    const prevLevel = LEVELS[levelIndex - 1];
                     try {
+                        const prevLevel = LEVELS[levelIndex - 1];
                         const countsRes = await api.get('/questions/level-counts');
-                        const counts: Record<string, number> = countsRes.data;
-                        const prevTotal = counts[prevLevel] ?? 0;
-                        const prevProgress = user.levelProgress?.[prevLevel] ?? 0;
+                        const counts: Record<string, any> = countsRes.data;
+                        const prevKey = `${grade}:${prevLevel}`;
+                        const prevStats = counts[prevKey] || counts[prevLevel];
+                        const prevTotal = prevStats?.totalQuestions ?? 0;
+                        const prevProgress = user.levelProgress?.[prevKey] ?? user.levelProgress?.[prevLevel] ?? 0;
                         if (prevTotal === 0 || prevProgress < prevTotal) {
                             navigate('/dashboard', { replace: true });
                             return;
@@ -79,19 +81,19 @@ const Quiz: React.FC = () => {
 
             try {
                 const questionsUrl = stage
-                    ? `/questions/by-stage?level=${level}&stage=${stage}`
-                    : `/questions/by-level?level=${level}`;
+                    ? `/questions/by-stage?grade=${grade}&level=${level}&stage=${stage}`
+                    : `/questions/by-level?grade=${grade}&level=${level}`;
 
                 const [qRes, startRes] = await Promise.all([
                     api.get(questionsUrl),
-                    api.post('/questions/start', { level })
+                    api.post('/questions/start', { grade, level })
                 ]);
 
                 const allQuestions = qRes.data;
                 const updatedUser = startRes.data;
 
                 // Check if the fresh status reveals a rest period (e.g., sessions expired)
-                const freshRestEnd = updatedUser.restEndTimes?.[level];
+                const freshRestEnd = updatedUser.restEndTimes?.[`${grade}:${level}`];
                 if (freshRestEnd) {
                     const now = new Date();
                     const restEnd = new Date(freshRestEnd);
@@ -112,7 +114,7 @@ const Quiz: React.FC = () => {
                 const answeredIds = updatedUser.answeredQuestions || [];
                 let progressIndex = 0;
 
-                const stageKey = `${level}:${stage}`;
+                const stageKey = `${grade}:${level}:${stage}`;
                 const savedStageProgress = updatedUser.stageProgress?.[stageKey];
 
                 if (stage && savedStageProgress !== undefined) {
@@ -131,7 +133,7 @@ const Quiz: React.FC = () => {
                 setCurrentIndex(progressIndex >= allQuestions.length ? 0 : progressIndex);
 
                 // Handle timer
-                const freshQuizStart = updatedUser.quizStartTimes?.[level];
+                const freshQuizStart = updatedUser.quizStartTimes?.[`${grade}:${level}`];
                 if (freshQuizStart) {
                     const startTime = new Date(freshQuizStart);
                     const now = new Date();
@@ -140,11 +142,11 @@ const Quiz: React.FC = () => {
 
                     if (diffSeconds >= limitSeconds) {
                         // 20 min elapsed — call start again so backend sets restEndTime
-                        const restTriggerRes = await api.post('/questions/start', { level });
+                        const restTriggerRes = await api.post('/questions/start', { grade, level });
                         const restUser = restTriggerRes.data;
                         updateUser(restUser);
                         setIsRestingState(true);
-                        const finalRestEnd = restUser.restEndTimes?.[level];
+                        const finalRestEnd = restUser.restEndTimes?.[`${grade}:${level}`];
                         if (finalRestEnd) {
                             const now2 = new Date();
                             const restEnd = new Date(finalRestEnd);
@@ -180,10 +182,10 @@ const Quiz: React.FC = () => {
             // Timer expired — call backend so it sets restEndTime, then show countdown
             const triggerRest = async () => {
                 try {
-                    const res = await api.post('/questions/start', { level });
+                    const res = await api.post('/questions/start', { grade, level });
                     const restUser = res.data;
                     updateUser(restUser);
-                    const freshRestEnd = restUser.restEndTimes?.[level!];
+                    const freshRestEnd = restUser.restEndTimes?.[`${grade!}:${level!}`];
                     if (freshRestEnd) {
                         const now = new Date();
                         const restEnd = new Date(freshRestEnd);
@@ -234,6 +236,7 @@ const Quiz: React.FC = () => {
             if (user && questions[currentIndex]) {
                 const response = await api.post(`/questions/answer/${questions[currentIndex]._id}`, {
                     answer: selectedAnswer,
+                    grade,
                     level,
                     index: isCorrect ? currentIndex + 1 : currentIndex,
                     stage: stage ? Number(stage) : undefined
@@ -260,6 +263,7 @@ const Quiz: React.FC = () => {
                             // Stage completion
                             try {
                                 const res = await api.post('/questions/complete-stage', {
+                                    grade,
                                     level,
                                     stage: Number(stage)
                                 });

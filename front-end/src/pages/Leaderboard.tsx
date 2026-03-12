@@ -35,20 +35,23 @@ const RankCell: React.FC<{ index: number }> = ({ index }) => {
 };
 
 const Leaderboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'quiz' | 'battle'>('quiz');
+    const [activeTab, setActiveTab] = useState<'quiz' | 'battle' | 'class'>('quiz');
     const [quizLeaders, setQuizLeaders] = useState<any[]>([]);
     const [battleLeaders, setBattleLeaders] = useState<any[]>([]);
+    const [classLeaders, setClassLeaders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [quizRes, battleRes] = await Promise.all([
+                const [quizRes, battleRes, classRes] = await Promise.all([
                     api.get('/leaderboard'),
                     api.get('/fighter/battle/leaderboard'),
+                    api.get('/leaderboard/class-ranking'),
                 ]);
                 setQuizLeaders(quizRes.data);
                 setBattleLeaders(battleRes.data);
+                setClassLeaders(classRes.data);
             } catch (err) {
                 console.error('Error fetching leaderboard:', err);
             } finally {
@@ -98,6 +101,9 @@ const Leaderboard: React.FC = () => {
                 <button style={tabStyle(activeTab === 'battle')} onClick={() => setActiveTab('battle')}>
                     <Sword size={16} /> Döyüş Qalibiyyəti
                 </button>
+                <button style={tabStyle(activeTab === 'class')} onClick={() => setActiveTab('class')}>
+                    🏆 Sinif Reytinqi
+                </button>
             </div>
 
             {/* Quiz Leaderboard */}
@@ -108,6 +114,7 @@ const Leaderboard: React.FC = () => {
                             <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sıra</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Şagird</th>
+                                <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Sinif</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Səviyyə</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Düzgün</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>AZN</th>
@@ -126,7 +133,10 @@ const Leaderboard: React.FC = () => {
                                         <RankCell index={index} />
                                     </td>
                                     <td style={{ padding: '1rem 0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                                        {student.name} {student.surname} ({student.fatherName})
+                                        {student.name} {student.surname}
+                                    </td>
+                                    <td style={{ padding: '1rem 0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                                        {student.grade}
                                     </td>
                                     <td style={{ padding: '1rem 0.75rem' }}>
                                         <span style={{ background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.6rem', borderRadius: '1rem', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
@@ -155,6 +165,7 @@ const Leaderboard: React.FC = () => {
                             <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sıra</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Döyüşçü</th>
+                                <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Sinif</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Səviyyə</th>
                                 <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Qalibiyyət</th>
                             </tr>
@@ -172,7 +183,10 @@ const Leaderboard: React.FC = () => {
                                         <RankCell index={index} />
                                     </td>
                                     <td style={{ padding: '1rem 0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                                        {fighter.name} {fighter.surname} ({fighter.fatherName})
+                                        {fighter.name} {fighter.surname}
+                                    </td>
+                                    <td style={{ padding: '1rem 0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                                        {fighter.grade}
                                     </td>
                                     <td style={{ padding: '1rem 0.75rem' }}>
                                         <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.25rem 0.6rem', borderRadius: '1rem', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
@@ -191,6 +205,53 @@ const Leaderboard: React.FC = () => {
                     {battleLeaders.length === 0 && (
                         <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                             Hələ heç bir döyüş olmayıb. İlk qalibi sən ol!
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Class Leaderboard */}
+            {activeTab === 'class' && (
+                <div className="glass-card" style={{ padding: '0.5rem', overflowX: 'auto' }}>
+                    <table style={{ width: '100%', minWidth: '420px', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sıra</th>
+                                <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Sinif</th>
+                                <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Düzgün sual sayı</th>
+                                <th style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Qalibiyyət</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {classLeaders.map((item, index) => (
+                                <motion.tr
+                                    key={item.grade}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.04 }}
+                                    style={{ borderBottom: index === classLeaders.length - 1 ? 'none' : '1px solid var(--border)' }}
+                                >
+                                    <td style={{ padding: '1rem 0.75rem' }}>
+                                        <RankCell index={index} />
+                                    </td>
+                                    <td style={{ padding: '1rem 0.75rem', fontWeight: 700, fontSize: '1rem', color: 'var(--primary)' }}>
+                                        {item.grade}
+                                    </td>
+                                    <td style={{ padding: '1rem 0.75rem', textAlign: 'right', fontWeight: 800, color: 'var(--success)', whiteSpace: 'nowrap' }}>
+                                        {item.totalCorrectAnswers}
+                                    </td>
+                                    <td style={{ padding: '1rem 0.75rem', textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                        <span style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                            ⚔️ {item.totalWins}
+                                        </span>
+                                    </td>
+                                </motion.tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {classLeaders.length === 0 && (
+                        <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                            Hələ ki heç bir nəticə yoxdur.
                         </div>
                     )}
                 </div>

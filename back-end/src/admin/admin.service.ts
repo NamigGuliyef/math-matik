@@ -11,7 +11,7 @@ export class AdminService {
     @InjectModel(Question.name) private questionModel: Model<Question>,
     @InjectModel(User.name) private userModel: Model<User>,
     private activityService: ActivityService,
-  ) { }
+  ) {}
 
   async getActivities(page: number = 1, limit: number = 20, search?: string) {
     return this.activityService.getFilteredActivities(page, limit, search);

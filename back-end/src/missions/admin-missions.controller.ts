@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { MissionsService } from './missions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -14,54 +23,76 @@ import { ChestReward } from './schemas/chest-reward.schema';
 @Roles(UserRole.ADMIN)
 @Controller('admin/missions')
 export class AdminMissionsController {
-    constructor(
-        @InjectModel(Mission.name) private missionModel: Model<Mission>,
-        @InjectModel(Achievement.name) private achievementModel: Model<Achievement>,
-        @InjectModel(ChestReward.name) private chestRewardModel: Model<ChestReward>,
-    ) { }
+  constructor(
+    @InjectModel(Mission.name) private missionModel: Model<Mission>,
+    @InjectModel(Achievement.name) private achievementModel: Model<Achievement>,
+    @InjectModel(ChestReward.name) private chestRewardModel: Model<ChestReward>,
+  ) {}
 
-    // Missions
-    @Get('daily')
-    async getDaily() { return this.missionModel.find().exec(); }
+  // Missions
+  @Get('daily')
+  async getDaily() {
+    return this.missionModel.find().exec();
+  }
 
-    @Post('daily')
-    async createDaily(@Body() data: any) { return new this.missionModel(data).save(); }
+  @Post('daily')
+  async createDaily(@Body() data: any) {
+    return new this.missionModel(data).save();
+  }
 
-    @Put('daily/:id')
-    async updateDaily(@Param('id') id: string, @Body() data: any) {
-        return this.missionModel.findByIdAndUpdate(id, data, { new: true }).exec();
-    }
+  @Put('daily/:id')
+  async updateDaily(@Param('id') id: string, @Body() data: any) {
+    return this.missionModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
 
-    @Delete('daily/:id')
-    async deleteDaily(@Param('id') id: string) { return this.missionModel.findByIdAndDelete(id).exec(); }
+  @Delete('daily/:id')
+  async deleteDaily(@Param('id') id: string) {
+    return this.missionModel.findByIdAndDelete(id).exec();
+  }
 
-    // Achievements
-    @Get('achievements')
-    async getAchievements() { return this.achievementModel.find().exec(); }
+  // Achievements
+  @Get('achievements')
+  async getAchievements() {
+    return this.achievementModel.find().exec();
+  }
 
-    @Post('achievements')
-    async createAchievement(@Body() data: any) { return new this.achievementModel(data).save(); }
+  @Post('achievements')
+  async createAchievement(@Body() data: any) {
+    return new this.achievementModel(data).save();
+  }
 
-    @Put('achievements/:id')
-    async updateAchievement(@Param('id') id: string, @Body() data: any) {
-        return this.achievementModel.findByIdAndUpdate(id, data, { new: true }).exec();
-    }
+  @Put('achievements/:id')
+  async updateAchievement(@Param('id') id: string, @Body() data: any) {
+    return this.achievementModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .exec();
+  }
 
-    @Delete('achievements/:id')
-    async deleteAchievement(@Param('id') id: string) { return this.achievementModel.findByIdAndDelete(id).exec(); }
+  @Delete('achievements/:id')
+  async deleteAchievement(@Param('id') id: string) {
+    return this.achievementModel.findByIdAndDelete(id).exec();
+  }
 
-    // Chest Rewards
-    @Get('chest-rewards')
-    async getChestRewards() { return this.chestRewardModel.find().exec(); }
+  // Chest Rewards
+  @Get('chest-rewards')
+  async getChestRewards() {
+    return this.chestRewardModel.find().exec();
+  }
 
-    @Post('chest-rewards')
-    async createChestReward(@Body() data: any) { return new this.chestRewardModel(data).save(); }
+  @Post('chest-rewards')
+  async createChestReward(@Body() data: any) {
+    return new this.chestRewardModel(data).save();
+  }
 
-    @Put('chest-rewards/:id')
-    async updateChestReward(@Param('id') id: string, @Body() data: any) {
-        return this.chestRewardModel.findByIdAndUpdate(id, data, { new: true }).exec();
-    }
+  @Put('chest-rewards/:id')
+  async updateChestReward(@Param('id') id: string, @Body() data: any) {
+    return this.chestRewardModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .exec();
+  }
 
-    @Delete('chest-rewards/:id')
-    async deleteChestReward(@Param('id') id: string) { return this.chestRewardModel.findByIdAndDelete(id).exec(); }
+  @Delete('chest-rewards/:id')
+  async deleteChestReward(@Param('id') id: string) {
+    return this.chestRewardModel.findByIdAndDelete(id).exec();
+  }
 }

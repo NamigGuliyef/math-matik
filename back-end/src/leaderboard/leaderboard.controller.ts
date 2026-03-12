@@ -11,6 +11,11 @@ export class LeaderboardController {
     return this.usersService.getLeaderboard();
   }
 
+  @Get('class-ranking')
+  getClassRanking() {
+    return this.usersService.getClassRanking();
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req: any) {

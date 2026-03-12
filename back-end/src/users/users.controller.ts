@@ -22,7 +22,10 @@ export class UsersController {
   @Post('upload-avatar')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     if (!file) {
       throw new BadRequestException('Fayl seçilməyib');
     }
@@ -35,7 +38,9 @@ export class UsersController {
       );
       return updatedUser;
     } catch (error) {
-      throw new BadRequestException('Şəkil yüklənərkən xəta baş verdi: ' + error.message);
+      throw new BadRequestException(
+        'Şəkil yüklənərkən xəta baş verdi: ' + error.message,
+      );
     }
   }
 }

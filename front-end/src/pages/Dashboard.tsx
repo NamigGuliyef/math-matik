@@ -14,6 +14,7 @@ import {
     ArrowLeft,
     Loader2,
     Camera,
+    Gamepad2
 } from 'lucide-react';
 import api from '../api/client';
 import RulesModal from '../components/RulesModal';
@@ -101,18 +102,22 @@ const MathBackground: React.FC = () => {
 };
 
 /* ── Level data ── */
-const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
+const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6', 'level7', 'level8', 'level9', 'level10'];
 
 const levelMeta = [
-    { title: 'Toplama & Çıxma', description: 'Riyazi toplama və çıxma misalları', icon: '➕', color: '#6366f1', glow: 'rgba(99,102,241,0.6)', rank: 'NOVICE' },
-    { title: 'Müqayisə & Boşluq', description: 'Çatışmayan ədədi tap, ədədləri müqayisə et.', icon: '🔢', color: '#8b5cf6', glow: 'rgba(139,92,246,0.6)', rank: 'ROOKIE' },
-    { title: 'Sadə Vurma', description: 'Sadə vurma əməliyyatları və müqayisəsi.', icon: '✖️', color: '#ec4899', glow: 'rgba(236,72,153,0.6)', rank: 'FIGHTER' },
-    { title: 'Mürəkkəb Vurma', description: 'Mürəkkəb vurma əməliyyatları və müqayisə.', icon: '🧮', color: '#f59e0b', glow: 'rgba(245,158,11,0.6)', rank: 'WARRIOR' },
-    { title: 'Ardıcıllıq', description: 'Ardıcıllığı tamamla, ən böyük / kiçik tap.', icon: '📊', color: '#10b981', glow: 'rgba(16,185,129,0.6)', rank: 'CHAMPION' },
-    { title: 'Məsələ & Məntiqi', description: 'Pul, yaş və s. , ədəd oxu, onluq-təklik məsələləri.', icon: '🧠', color: '#06b6d4', glow: 'rgba(6,182,212,0.6)', rank: 'LEGEND' },
+    { title: 'Toplama & Çıxma', description: 'Riyazi toplama və çıxma misalları', icon: <Star size={24} />, color: '#6366f1', glow: 'rgba(99,102,241,0.6)', rank: 'NOVICE' },
+    { title: 'Müqayisə & Boşluq', description: 'Rəqəmlərin müqayisəsi və boşluqlar', icon: <Shield size={24} />, color: '#10b981', glow: 'rgba(16,185,129,0.6)', rank: 'APPRENTICE' },
+    { title: 'Sadə Vurma', description: 'Birrəqəmli ədədlərin vurulması', icon: <Sword size={24} />, color: '#f59e0b', glow: 'rgba(245,158,11,0.6)', rank: 'JOURNEYMAN' },
+    { title: 'Mürəkkəb Vurma', description: 'Çoxrəqəmli ədədlərin vurulması', icon: <Zap size={24} />, color: '#ef4444', glow: 'rgba(239,68,68,0.6)', rank: 'EXPERT' },
+    { title: 'Ardıcıllıq', description: 'Məntiqi say ardıcıllıqları', icon: <Trophy size={24} />, color: '#8b5cf6', glow: 'rgba(139,92,246,0.6)', rank: 'MASTER' },
+    { title: 'Məsələ & Məntiqi', description: 'Mürəkkəb riyazi məsələlər', icon: <PlayCircle size={24} />, color: '#ec4899', glow: 'rgba(236,72,153,0.6)', rank: 'GRANDMASTER' },
+    { title: 'Bölmə & Qalıqlı', description: 'Bölmə əməliyyatı və qalıqlar', icon: <Star size={24} />, color: '#f97316', glow: 'rgba(249,115,22,0.6)', rank: 'LEGEND' },
+    { title: 'Kəsrlər & Ondalıq', description: 'Kəsrlərlə iş və onluq saylar', icon: <Shield size={24} />, color: '#06b6d4', glow: 'rgba(6,182,212,0.6)', rank: 'IMMORTAL' },
+    { title: 'Həndəsi Fiqurlar', description: 'Həndəsənin əsasları', icon: <Sword size={24} />, color: '#10b981', glow: 'rgba(16,185,129,0.6)', rank: 'DIVINE' },
+    { title: 'Tənliklər', description: 'Məchulların tapılması', icon: <Gamepad2 size={24} />, color: '#f43f5e', glow: 'rgba(244,63,94,0.6)', rank: 'ETERNAL' }
 ];
 
-const zigzag = [0, 1, 0, -1, 0, 1];
+const zigzag = [0, 1, 0, -1, 0, 1, 0, -1, 0, 1];
 
 /* ── XP-bar utility ── */
 const XpBar: React.FC<{ pct: number; color: string; done: number; total: number; delay: number }> = ({ pct, color, done, total, delay }) => (
@@ -142,6 +147,8 @@ const XpBar: React.FC<{ pct: number; color: string; done: number; total: number;
 const Dashboard: React.FC = () => {
     const { user, updateUser, token } = useAuth();
     const { showNotification } = useNotification();
+    const [availableClasses, setAvailableClasses] = React.useState<string[]>([]);
+    const [selectedGrade, setSelectedGrade] = React.useState<string>(user?.grade || '5A');
     const [availableLevels, setAvailableLevels] = React.useState<string[]>([]);
     const [levelCounts, setLevelCounts] = React.useState<Record<string, { totalQuestions: number; totalStages: number }>>({});
     const [isRulesModalOpen, setIsRulesModalOpen] = React.useState(false);
@@ -195,10 +202,28 @@ const Dashboard: React.FC = () => {
     };
 
     useEffect(() => {
+        const fetchClasses = async () => {
+            try {
+                const res = await api.get('/questions/available-classes');
+                setAvailableClasses(res.data);
+                if (user?.grade && res.data.includes(user.grade)) {
+                    setSelectedGrade(user.grade);
+                } else if (res.data.length > 0) {
+                    setSelectedGrade(res.data[0]);
+                }
+            } catch (err) {
+                console.error('Error fetching classes:', err);
+            }
+        };
+        fetchClasses();
+    }, [user?.grade]);
+
+    useEffect(() => {
         const fetchData = async () => {
+            if (!selectedGrade) return;
             try {
                 const [levelsRes, countsRes, statusRes] = await Promise.all([
-                    api.get('/questions/available-levels'),
+                    api.get(`/questions/available-levels?grade=${selectedGrade}`),
                     api.get('/questions/level-counts'),
                     api.get('/questions/status'),
                 ]);
@@ -210,12 +235,12 @@ const Dashboard: React.FC = () => {
             }
         };
         fetchData();
-    }, []);
+    }, [selectedGrade]);
 
     const isLevelCompleted = (level: string) => {
-        const stats = levelCounts[level];
+        const stats = levelCounts[`${selectedGrade}:${level}`] || levelCounts[level]; // Support both old and new format for fallback
         if (!stats) return false;
-        return (user?.levelProgress?.[level] ?? 0) >= stats.totalQuestions;
+        return (user?.levelProgress?.[`${selectedGrade}:${level}`] ?? user?.levelProgress?.[level] ?? 0) >= stats.totalQuestions;
     };
     const isLevelAccessible = (level: string, index: number) => {
         if (!availableLevels.includes(level)) return false;
@@ -224,11 +249,11 @@ const Dashboard: React.FC = () => {
         return isLevelCompleted(LEVELS[index - 1]);
     };
     const getLevelProgress = (level: string) => {
-        const stats = levelCounts[level];
+        const stats = levelCounts[`${selectedGrade}:${level}`] || levelCounts[level];
         if (!stats) return 0;
 
         // Calculate based on completed stages
-        const completedStagesCount = user?.completedStages?.filter(s => s.startsWith(`${level}:`)).length || 0;
+        const completedStagesCount = user?.completedStages?.filter(s => s.startsWith(`${selectedGrade}:${level}:`)).length || 0;
         const totalStages = stats.totalStages || 1;
 
         return Math.min(100, Math.round((completedStagesCount / totalStages) * 100));
@@ -243,7 +268,7 @@ const Dashboard: React.FC = () => {
         setShowStagesLevel(level);
         setLoadingStages(true);
         try {
-            const res = await api.get(`/questions/stages?level=${level}`);
+            const res = await api.get(`/questions/stages?grade=${selectedGrade}&level=${level}`);
             setLevelStages(res.data);
         } catch (err) {
             console.error('Error fetching stages:', err);
@@ -263,16 +288,16 @@ const Dashboard: React.FC = () => {
 
     const handleStageClick = (level: string, stage: number, isAccessible: boolean) => {
         if (!isAccessible) return;
-        const stageId = `${level}:${stage}`;
+        const stageId = `${selectedGrade}:${level}:${stage}`;
         if (sessionStorage.getItem(`skipRules_${stageId}`) === 'true') {
-            navigate(`/quiz/${level}/${stage}`);
+            navigate(`/quiz/${selectedGrade}/${level}/${stage}`);
             return;
         }
         setSelectedLevel(stageId);
         setIsRulesModalOpen(true);
     };
 
-    const currentStageNum = (user?.completedStages?.filter(s => s.startsWith(`${user?.level || 'level1'}:`)).length || 0) + 1;
+    const currentStageNum = (user?.completedStages?.filter(s => s.startsWith(`${selectedGrade}:${user?.level || 'level1'}:`)).length || 0) + 1;
 
     /* HUD stat cards */
     const hudStats = [
@@ -353,6 +378,29 @@ const Dashboard: React.FC = () => {
                     </div>
                 </motion.div>
 
+                {/* ── SIDEBAR CLASS NAV ── */}
+                <div className="g-sidebar-nav custom-scrollbar-hidden">
+                    <div className="g-sidebar-label">SİNİF</div>
+                    {availableClasses.map((grade, idx) => (
+                        <motion.button
+                            key={grade}
+                            className={`g-sidebar-item ${selectedGrade === grade ? 'g-sidebar-item--active' : ''}`}
+                            onClick={() => setSelectedGrade(grade)}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            whileHover={{ scale: 1.15 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <span className="g-sidebar-item-num">{grade.replace(/Sinif\s*/g, '')}</span>
+                            <span className="g-sidebar-item-tag">SİNİF</span>
+                        </motion.button>
+                    ))}
+                    {availableClasses.length === 0 && (
+                        <div className="g-sidebar-item" style={{ opacity: 0.5 }}>...</div>
+                    )}
+                </div>
+
                 {/* ── HUD STAT CARDS ── */}
                 <div className="g-hud-grid">
                     {hudStats.map((s, i) => (
@@ -407,10 +455,10 @@ const Dashboard: React.FC = () => {
                                 </div>
                             ) : levelStages.length > 0 ? (
                                 levelStages.map((s, idx) => {
-                                    const stageId = `${showStagesLevel}:${s.stage}`;
+                                    const stageId = `${selectedGrade}:${showStagesLevel}:${s.stage}`;
                                     const isCompleted = user?.completedStages?.includes(stageId);
                                     // Accessible if it's stage 1, or if previous stage is completed
-                                    const prevStageId = idx > 0 ? `${showStagesLevel}:${levelStages[idx - 1].stage}` : null;
+                                    const prevStageId = idx > 0 ? `${selectedGrade}:${showStagesLevel}:${levelStages[idx - 1].stage}` : null;
                                     const isAccessible = idx === 0 || (user?.completedStages?.includes(prevStageId!) ?? false);
 
                                     return (
@@ -545,8 +593,8 @@ const Dashboard: React.FC = () => {
                                                 <XpBar
                                                     pct={progress}
                                                     color={meta.color}
-                                                    done={user?.completedStages?.filter(s => s.startsWith(`${level}:`)).length || 0}
-                                                    total={levelCounts[level]?.totalStages || 0}
+                                                    done={user?.completedStages?.filter(s => s.startsWith(`${selectedGrade}:${level}:`)).length || 0}
+                                                    total={levelCounts[`${selectedGrade}:${level}`]?.totalStages || levelCounts[level]?.totalStages || 0}
                                                     delay={index * 0.15}
                                                 />
                                             )}
