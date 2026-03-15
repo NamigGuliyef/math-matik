@@ -80,8 +80,11 @@ export class QuestionsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('start')
-  async startQuiz(@Request() req: any, @Body('level') level: string) {
-    return this.usersService.startQuiz(req.user.userId, level);
+  async startQuiz(
+    @Request() req: any,
+    @Body() body: { grade: string; level: string },
+  ) {
+    return this.usersService.startQuiz(req.user.userId, body.grade, body.level);
   }
 
   @UseGuards(JwtAuthGuard)

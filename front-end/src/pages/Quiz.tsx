@@ -5,6 +5,7 @@ import api from '../api/client';
 import QuestionCard from '../components/QuestionCard';
 import { Loader2, Trophy, ArrowLeft, Timer, Clock, Zap, Gift } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 
 const LEVELS = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
 
@@ -25,6 +26,7 @@ const Quiz: React.FC = () => {
     const timerRef = useRef<any>(null);
     const navigate = useNavigate();
     const { user, updateUser } = useAuth();
+    const { showNotification } = useNotification();
 
     // --- Robust Reactive Rest Logic ---
     // Derived rest status to ensure immediate UI feedback even before useEffect runs
@@ -249,13 +251,22 @@ const Quiz: React.FC = () => {
                     return;
                 }
 
-                const { user: updatedUser, addedReward } = response.data;
+                const { user: updatedUser, addedReward, streakRewards } = response.data;
                 if (addedReward > 0) {
                     setScore(prev => prev + addedReward);
                 }
                 updateUser(updatedUser);
 
+                // --- Notify Streak Rewards ---
+                if (streakRewards && streakRewards.length > 0) {
+                    streakRewards.forEach((milestone: any) => {
+                        showNotification(`🔖 Yeni Streak! ${milestone.requirement} gün/sual keçdiniz! Mükafat: ${milestone.rewardAzn} AZN, ${milestone.rewardChest} Sandıq`, 'success');
+                    });
+                }
+                // -----------------------------
+
                 if (isCorrect) {
+                  // ... logic continues
                     if (currentIndex < questions.length - 1) {
                         setCurrentIndex(prev => prev + 1);
                     } else {
@@ -270,6 +281,14 @@ const Quiz: React.FC = () => {
                                 console.log('Stage completion response:', res.data);
                                 setStageReward(res.data.reward);
                                 setIsChestOpen(false); // Reset for new stage
+
+                                // --- Notify Streak Rewards ---
+                                if (res.data.streakRewards && res.data.streakRewards.length > 0) {
+                                    res.data.streakRewards.forEach((milestone: any) => {
+                                        showNotification(`🔖 Streak Mükafatı! ${milestone.requirement} səviyyə/gün keçdiniz!`, 'success');
+                                    });
+                                }
+                                // -----------------------------
 
                                 // Refresh user data to get updated completedStages and progress
                                 const statusRes = await api.get('/questions/status');

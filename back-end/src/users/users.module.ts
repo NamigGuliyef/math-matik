@@ -6,10 +6,12 @@ import { UsersController } from './users.controller';
 import { MissionsModule } from '../missions/missions.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { Battle, BattleSchema } from '../fighter/schemas/battle.schema';
+import { StreaksModule } from '../streaks/streaks.module';
 
 @Global()
 @Module({
   imports: [
+    StreaksModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Battle.name, schema: BattleSchema },

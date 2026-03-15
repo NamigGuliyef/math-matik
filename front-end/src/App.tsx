@@ -9,6 +9,7 @@ import Quiz from './pages/Quiz';
 import Leaderboard from './pages/Leaderboard';
 import Fighter from './pages/Fighter';
 import Missions from './pages/Missions';
+import DailyQuiz from './pages/DailyQuiz';
 
 // Admin Pages
 import AdminLayout from './components/layouts/AdminLayout';
@@ -18,6 +19,9 @@ import QuestionForm from './pages/admin/QuestionForm';
 import UserManagement from './pages/admin/UserManagement';
 import AdminFighter from './pages/admin/AdminFighter';
 import AdminMissions from './pages/admin/AdminMissions';
+import AdminDailyQuiz from './pages/admin/AdminDailyQuiz';
+import AdminStreaks from './pages/admin/AdminStreaks';
+import AdminRanks from './pages/admin/AdminRanks';
 import AdminGuard from './components/AdminGuard';
 
 import { LogOut, User as UserIcon, LayoutDashboard, Trophy, Settings, Shield, ScrollText } from 'lucide-react';
@@ -130,6 +134,7 @@ const App: React.FC = () => {
               <Route path="/dashboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Dashboard /></ProtectedRoute></main></>} />
               <Route path="/fighter" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Fighter /></ProtectedRoute></main></>} />
               <Route path="/missions" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Missions /></ProtectedRoute></main></>} />
+              <Route path="/daily-quiz" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><DailyQuiz /></ProtectedRoute></main></>} />
               <Route path="/quiz/:grade/:level" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
               <Route path="/quiz/:grade/:level/:stage" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Quiz /></ProtectedRoute></main></>} />
               <Route path="/leaderboard" element={<><Navbar /><main style={{ flex: 1, padding: '2rem 0' }}><ProtectedRoute><Leaderboard /></ProtectedRoute></main></>} />
@@ -143,6 +148,9 @@ const App: React.FC = () => {
                 <Route path="users" element={<UserManagement />} />
                 <Route path="fighter" element={<AdminFighter />} />
                 <Route path="missions" element={<AdminMissions />} />
+                <Route path="daily-quiz" element={<AdminDailyQuiz />} />
+                <Route path="streaks" element={<AdminStreaks />} />
+                <Route path="ranks" element={<AdminRanks />} />
               </Route>
             </Routes>
             <GlobalChat />

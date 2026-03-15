@@ -5,6 +5,7 @@ import { User, UserRole } from './schemas/user.schema';
 import { MissionsService } from '../missions/missions.service';
 import { MissionType } from '../missions/schemas/mission.schema';
 import { Battle } from '../fighter/schemas/battle.schema';
+import { StreaksService } from '../streaks/streaks.service';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,7 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Battle.name) private battleModel: Model<Battle>,
     private readonly missionsService: MissionsService,
+    private readonly streaksService: StreaksService,
   ) {}
 
   async create(userData: any): Promise<User> {
@@ -57,7 +59,11 @@ export class UsersService {
     return winCount;
   }
 
-  async startQuiz(userId: string, level: string): Promise<User | null> {
+  async startQuiz(
+    userId: string,
+    grade: string,
+    level: string,
+  ): Promise<User | null> {
     const user = await this.userModel.findById(userId);
     if (!user) return null;
 
@@ -68,12 +74,13 @@ export class UsersService {
     const quizStartTimes = user.quizStartTimes || new Map();
     const restEndTimes = user.restEndTimes || new Map();
 
-    const currentQuizStartTime = quizStartTimes.get(level);
-    const currentRestEndTime = restEndTimes.get(level);
+    const sessionKey = `${grade}:${level}`;
+    const currentQuizStartTime = quizStartTimes.get(sessionKey);
+    const currentRestEndTime = restEndTimes.get(sessionKey);
 
     // 1. Check if rest period for this level has expired
     if (currentRestEndTime && now >= currentRestEndTime) {
-      updates[`restEndTimes.${level}`] = null;
+      updates[`restEndTimes.${sessionKey}`] = null;
     }
 
     // 2. Check if a new session should start or rest should be enforced
@@ -82,8 +89,8 @@ export class UsersService {
     if (!isCurrentlyResting) {
       if (!currentQuizStartTime) {
         // No active session for this level — start a new one
-        updates[`quizStartTimes.${level}`] = now;
-        updates[`levelSessionWrongAnswers.${level}`] = 0;
+        updates[`quizStartTimes.${sessionKey}`] = now;
+        updates[`levelSessionWrongAnswers.${sessionKey}`] = 0;
       } else {
         const quizDuration = 20 * 60 * 1000;
         const restDuration = 60 * 60 * 1000;
@@ -97,13 +104,13 @@ export class UsersService {
 
           if (now < scheduledRestEnd) {
             // Still in the calculated rest period
-            updates[`restEndTimes.${level}`] = scheduledRestEnd;
-            updates[`quizStartTimes.${level}`] = null;
+            updates[`restEndTimes.${sessionKey}`] = scheduledRestEnd;
+            updates[`quizStartTimes.${sessionKey}`] = null;
           } else {
             // Rest period also expired — allow starting a new session immediately
-            updates[`quizStartTimes.${level}`] = now;
-            updates[`levelSessionWrongAnswers.${level}`] = 0;
-            updates[`restEndTimes.${level}`] = null;
+            updates[`quizStartTimes.${sessionKey}`] = now;
+            updates[`levelSessionWrongAnswers.${sessionKey}`] = 0;
+            updates[`restEndTimes.${sessionKey}`] = null;
           }
         }
       }
@@ -133,7 +140,8 @@ export class UsersService {
 
     const now = new Date();
     const restEndTimes = user.restEndTimes || new Map();
-    const currentRestEndTime = restEndTimes.get(level);
+    const sessionKey = `${grade}:${level}`;
+    const currentRestEndTime = restEndTimes.get(sessionKey);
 
     // Check if in rest period for this level
     if (currentRestEndTime) {
@@ -144,7 +152,7 @@ export class UsersService {
 
     // Initialize level-specific quiz start time if not set
     const quizStartTimes = user.quizStartTimes || new Map();
-    let currentQuizStartTime = quizStartTimes.get(level);
+    let currentQuizStartTime = quizStartTimes.get(sessionKey);
     if (!currentQuizStartTime) {
       currentQuizStartTime = now;
     }
@@ -166,10 +174,10 @@ export class UsersService {
           userId,
           {
             $set: {
-              [`restEndTimes.${level}`]: restEndTime,
-              [`quizStartTimes.${level}`]: null,
-              [`levelProgress.${level}`]: index,
-              [`levelSessionWrongAnswers.${level}`]: 0,
+              [`restEndTimes.${sessionKey}`]: restEndTime,
+              [`quizStartTimes.${sessionKey}`]: null,
+              [`levelProgress.${sessionKey}`]: index,
+              [`levelSessionWrongAnswers.${sessionKey}`]: 0,
             },
           },
           { new: true },
@@ -180,7 +188,7 @@ export class UsersService {
 
     // Check if chances are already gone for this level
     const levelSessionWrongAnswers = user.levelSessionWrongAnswers || new Map();
-    const currentWrongAnswers = levelSessionWrongAnswers.get(level) || 0;
+    const currentWrongAnswers = levelSessionWrongAnswers.get(sessionKey) || 0;
 
     if (currentWrongAnswers >= 5) {
       const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
@@ -189,9 +197,9 @@ export class UsersService {
           userId,
           {
             $set: {
-              [`restEndTimes.${level}`]: restEndTime,
-              [`quizStartTimes.${level}`]: null,
-              [`levelSessionWrongAnswers.${level}`]: 0,
+              [`restEndTimes.${sessionKey}`]: restEndTime,
+              [`quizStartTimes.${sessionKey}`]: null,
+              [`levelSessionWrongAnswers.${sessionKey}`]: 0,
             },
           },
           { new: true },
@@ -203,7 +211,7 @@ export class UsersService {
     const query: any = {
       $inc: { totalAnswered: 1 },
       $set: {
-        [`quizStartTimes.${level}`]: currentQuizStartTime,
+        [`quizStartTimes.${sessionKey}`]: currentQuizStartTime,
       },
     };
     let addedReward = 0;
@@ -226,11 +234,11 @@ export class UsersService {
       // Check if this was the 5th mistake
       if (currentWrongAnswers + 1 >= 5) {
         const restEndTime = new Date(now.getTime() + 60 * 60 * 1000);
-        query.$set[`restEndTimes.${level}`] = restEndTime;
-        query.$set[`quizStartTimes.${level}`] = null;
-        query.$set[`levelSessionWrongAnswers.${level}`] = 0;
+        query.$set[`restEndTimes.${sessionKey}`] = restEndTime;
+        query.$set[`quizStartTimes.${sessionKey}`] = null;
+        query.$set[`levelSessionWrongAnswers.${sessionKey}`] = 0;
       } else {
-        query.$inc[`levelSessionWrongAnswers.${level}`] = 1;
+        query.$inc[`levelSessionWrongAnswers.${sessionKey}`] = 1;
       }
     }
 
@@ -246,13 +254,28 @@ export class UsersService {
         1,
       );
 
-      const updatedRestTimes = updatedUser.restEndTimes || new Map();
-      if (updatedRestTimes.get(level) && !isCorrect) {
-        return { user: updatedUser, addedReward: 0, error: 'OUT_OF_CHANCES' };
+      // --- Track Streaks ---
+      const streakRewards: any[] = [];
+      try {
+        const dailyLog = await this.streaksService.logActivity(userId, 'daily', true);
+        const questionLog = await this.streaksService.logActivity(userId, 'question', isCorrect);
+        
+        if (dailyLog?.rewardedMilestones) streakRewards.push(...dailyLog.rewardedMilestones);
+        if (questionLog?.rewardedMilestones) streakRewards.push(...questionLog.rewardedMilestones);
+      } catch (e) {
+        console.error('Error logging streak in UsersService:', e);
       }
+      // ---------------------
+
+      const updatedRestTimes = updatedUser.restEndTimes || new Map();
+      if (updatedRestTimes.get(sessionKey) && !isCorrect) {
+        return { user: updatedUser, addedReward: 0, streakRewards, error: 'OUT_OF_CHANCES' } as any;
+      }
+
+      return { user: updatedUser, addedReward: isCorrect ? addedReward : 0, streakRewards } as any;
     }
 
-    return updatedUser ? { user: updatedUser, addedReward } : null;
+    return (updatedUser ? { user: updatedUser, addedReward: isCorrect ? addedReward : 0, streakRewards: [] } : null) as any;
   }
 
   async getQuizStatus(userId: string) {
@@ -270,7 +293,7 @@ export class UsersService {
     return this.userModel
       .find({ role: UserRole.STUDENT })
       .select(
-        'name surname fatherName grade balance level correctAnswers profilePicture totalBattlesWon',
+        'name surname fatherName grade balance level correctAnswers profilePicture totalBattlesWon totalAnswered',
       )
       .sort({ correctAnswers: -1 })
       .limit(50)
@@ -278,7 +301,7 @@ export class UsersService {
   }
 
   async getClassRanking() {
-    // Rank classes based on total correct answers and total wins of students in that class
+    // Rank classes based on total correct answers and total wins of students in that class using user document totals
     const stats = await this.userModel.aggregate([
       { $match: { role: UserRole.STUDENT } },
       {

@@ -86,6 +86,29 @@ export class User extends Document {
   @Prop({ default: null })
   profilePicture: string;
 
+  @Prop({ default: null })
+  lastDailyQuizDate: string; // Format: 'YYYY-MM-DD'
+
+  // --- Streak System Fields ---
+  @Prop({ default: 0 })
+  currentDailyStreak: number;
+
+  @Prop({ default: 0 })
+  currentQuestionStreak: number;
+
+  @Prop({ default: 0 })
+  currentStageStreak: number;
+
+  @Prop({ default: 0 })
+  currentBattleStreak: number;
+
+  @Prop({ default: null })
+  lastStreakActivityDate: string; // Format: 'YYYY-MM-DD'
+
+  @Prop({ type: Map, of: Number, default: {} })
+  claimedStreakMilestones: Map<string, number>; // e.g. 'daily' -> 7 (claimed up to 7 days milestone)
+  // ----------------------------
+
   @Prop({ default: Date.now })
   lastActivity: Date;
 }

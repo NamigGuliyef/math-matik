@@ -15,6 +15,8 @@ import {
 import { MissionsService } from '../missions/missions.service';
 import { MissionType } from '../missions/schemas/mission.schema';
 
+import { StreaksService } from '../streaks/streaks.service';
+
 @Injectable()
 export class QuizService {
   constructor(
@@ -25,6 +27,7 @@ export class QuizService {
     private inventoryModel: Model<UserInventory>,
     private fighterService: FighterService,
     private missionsService: MissionsService,
+    private streaksService: StreaksService,
   ) {}
 
   async completeStage(
@@ -178,8 +181,22 @@ export class QuizService {
     await user.save();
     log(`Saved user progress successfully.`);
 
+    // --- Add Streak Tracking ---
+    const streakRewards: any[] = [];
+    try {
+      const dailyLog = await this.streaksService.logActivity(userId, 'daily', true);
+      const stageLog = await this.streaksService.logActivity(userId, 'stage', true);
+
+      if (dailyLog?.rewardedMilestones) streakRewards.push(...dailyLog.rewardedMilestones);
+      if (stageLog?.rewardedMilestones) streakRewards.push(...stageLog.rewardedMilestones);
+    } catch (e) {
+      log(`Error logging streak: ${e.message}`);
+    }
+    // ---------------------------
+
     return {
       stageComplete: true,
+      streakRewards,
       reward: {
         rewardType: 'item_progress',
         itemName: randomItem.name,

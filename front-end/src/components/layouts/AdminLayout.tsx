@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Users, LogOut, Award, ChevronLeft, Menu, Shield, ScrollText } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Users, LogOut, Award, ChevronLeft, Menu, Shield, ScrollText, CalendarDays } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -25,6 +25,9 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/users', icon: <Users size={20} />, label: 'İstifadəçilər' },
         { to: '/admin/fighter', icon: <Shield size={20} />, label: 'Döyüşçü Parametrləri' },
         { to: '/admin/missions', icon: <ScrollText size={20} />, label: 'Tapşırıqlar & Nailiyyətlər' },
+        { to: '/admin/daily-quiz', icon: <CalendarDays size={20} />, label: 'Günlük Quiz' },
+        { to: '/admin/streaks', icon: <Award size={20} />, label: 'Streak Mükafatları' },
+        { to: '/admin/ranks', icon: <Shield size={20} />, label: 'Rank İdarəetməsi' },
     ];
 
     return (
@@ -53,24 +56,39 @@ const AdminLayout: React.FC = () => {
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
+                    flexDirection: isCollapsed ? 'column' : 'row',
                     justifyContent: isCollapsed ? 'center' : 'space-between',
                     marginBottom: '2.5rem',
-                    gap: '0.75rem'
+                    gap: isCollapsed ? '1rem' : '0.75rem'
                 }}>
-                    {!isCollapsed && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Award color="white" size={20} />
-                            </div>
-                            <span className="gradient-text" style={{ fontSize: '1.25rem', fontWeight: 800, whiteSpace: 'nowrap' }}>ADMIN</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ 
+                            background: 'rgba(255, 255, 255, 0.05)', 
+                            width: isCollapsed ? '44px' : '40px', 
+                            height: isCollapsed ? '44px' : '40px', 
+                            borderRadius: '10px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            overflow: 'hidden',
+                            padding: isCollapsed ? '7px' : '6px',
+                            transition: 'all 0.3s ease'
+                        }}>
+                            <img src="/favicon.png" alt="Math Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         </div>
-                    )}
+                        {!isCollapsed && (
+                            <span className="gradient-text" style={{ fontSize: '1.25rem', fontWeight: 800, whiteSpace: 'nowrap' }}>ADMIN</span>
+                        )}
+                    </div>
+                    
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
                         style={{
                             background: 'rgba(255,255,255,0.05)',
                             border: '1px solid var(--border)',
                             borderRadius: '8px',
+                            padding: '0',
                             width: '32px',
                             height: '32px',
                             display: 'flex',

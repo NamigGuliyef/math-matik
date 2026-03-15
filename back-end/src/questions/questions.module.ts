@@ -16,9 +16,11 @@ import {
   UserInventorySchema,
 } from '../fighter/schemas/user-inventory.schema';
 import { MissionsModule } from '../missions/missions.module';
+import { StreaksModule } from '../streaks/streaks.module';
 
 @Module({
   imports: [
+    StreaksModule,
     MongooseModule.forFeature([
       { name: Question.name, schema: QuestionSchema },
       { name: User.name, schema: UserSchema },

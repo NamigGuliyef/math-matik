@@ -12,9 +12,17 @@ import {
     Shield,
     Sword,
     ArrowLeft,
+    Flame,
+    Target,
+    ShieldCheck,
     Loader2,
     Camera,
-    Gamepad2
+    Gamepad2,
+    CalendarDays,
+    Gift,
+    Award,
+    Medal,
+    Crown
 } from 'lucide-react';
 import api from '../api/client';
 import RulesModal from '../components/RulesModal';
@@ -143,6 +151,20 @@ const XpBar: React.FC<{ pct: number; color: string; done: number; total: number;
     </div>
 );
 
+const renderRankIcon = (iconName: string, size = 20) => {
+    switch (iconName) {
+        case 'Trophy': return <Trophy size={size} />;
+        case 'Target': return <Target size={size} />;
+        case 'Zap': return <Zap size={size} />;
+        case 'Crown': return <Crown size={size} />;
+        case 'Sword': return <Sword size={size} />;
+        case 'Shield': return <Shield size={size} />;
+        case 'Award': return <Award size={size} />;
+        case 'Medal': return <Medal size={size} />;
+        default: return <Star size={size} />;
+    }
+};
+
 /* ═══════════════════════════════ COMPONENT ═══════════════════════════════ */
 const Dashboard: React.FC = () => {
     const { user, updateUser, token } = useAuth();
@@ -157,6 +179,8 @@ const Dashboard: React.FC = () => {
     const [levelStages, setLevelStages] = React.useState<any[]>([]);
     const [loadingStages, setLoadingStages] = React.useState(false);
     const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
+    const [dailyQuizStatus, setDailyQuizStatus] = React.useState<{ available: boolean; alreadyPlayed: boolean }>({ available: false, alreadyPlayed: false });
+    const [rankInfo, setRankInfo] = React.useState<{ currentRank: any; nextRank: any; totalAnswered: number } | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
     const isStudent = user?.role === 'student';
@@ -237,6 +261,51 @@ const Dashboard: React.FC = () => {
         fetchData();
     }, [selectedGrade]);
 
+    useEffect(() => {
+        const fetchDailyQuizStatus = async () => {
+            if (!selectedGrade) return;
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const res = await api.get(`/daily-quiz/today?date=${today}`);
+                if (res.data.quiz) {
+                    setDailyQuizStatus({ available: true, alreadyPlayed: false });
+                } else if (res.data.alreadyPlayed) {
+                    setDailyQuizStatus({ available: true, alreadyPlayed: true });
+                } else {
+                    setDailyQuizStatus({ available: false, alreadyPlayed: false });
+                }
+            } catch (err) {
+                setDailyQuizStatus({ available: false, alreadyPlayed: false });
+            }
+        };
+        fetchDailyQuizStatus();
+    }, [selectedGrade]);
+
+    const [userStreaks, setUserStreaks] = React.useState<any>(null);
+    useEffect(() => {
+        const fetchStreaks = async () => {
+            try {
+                const res = await api.get('/streaks/my-streaks');
+                setUserStreaks(res.data);
+            } catch (err) {
+                console.error('Error fetching streaks:', err);
+            }
+        };
+        fetchStreaks();
+    }, []);
+
+    useEffect(() => {
+        const fetchRank = async () => {
+            try {
+                const res = await api.get('/ranks/my-rank');
+                setRankInfo(res.data);
+            } catch (err) {
+                console.error('Error fetching rank info:', err);
+            }
+        };
+        fetchRank();
+    }, []);
+
     const isLevelCompleted = (level: string) => {
         const stats = levelCounts[`${selectedGrade}:${level}`] || levelCounts[level]; // Support both old and new format for fallback
         if (!stats) return false;
@@ -279,9 +348,8 @@ const Dashboard: React.FC = () => {
     const handleConfirmStart = (dontShowAgain: boolean) => {
         if (selectedLevel) {
             if (dontShowAgain) sessionStorage.setItem(`skipRules_${selectedLevel}`, 'true');
-            // Extract the actual level from "levelN:stageM" if needed, but here it's just level
-            const [level, stage] = selectedLevel.split(':');
-            navigate(`/quiz/${level}/${stage}`);
+            const [grade, level, stage] = selectedLevel.split(':');
+            navigate(`/quiz/${grade}/${level}/${stage}`);
         }
         setIsRulesModalOpen(false);
     };
@@ -304,7 +372,7 @@ const Dashboard: React.FC = () => {
         { label: 'DÜZGÜN', value: user?.correctAnswers || 0, icon: <Trophy size={20} />, color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
         { label: 'SƏHV', value: user?.wrongAnswers || 0, icon: <AlertCircle size={20} />, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
         { label: 'BALANS', value: `${Number(user?.balance || 0).toFixed(2)} ₼`, icon: <Star size={20} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-        { label: 'RANK', value: user?.level?.toUpperCase() || 'LVL 1', icon: <Shield size={20} />, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+        { label: 'RANK', value: rankInfo?.currentRank?.name || 'BAŞLANĞIC', icon: rankInfo?.currentRank ? renderRankIcon(rankInfo.currentRank.icon) : <Shield size={20} />, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
         { label: 'MƏRHƏLƏ', value: currentStageNum, icon: <Zap size={20} />, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
         { label: 'QALİBİYYƏT', value: user?.totalBattlesWon || 0, icon: <Sword size={20} />, color: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
     ];
@@ -335,47 +403,165 @@ const Dashboard: React.FC = () => {
                     <div className={`g-player-avatar ${uploadingAvatar ? 'uploading' : ''}`} onClick={handleAvatarClick}>
                         <div className="g-avatar-hex">
                             {uploadingAvatar ? (
-                                <Loader2 className="animate-spin" size={24} color="#fff" />
+                                <Loader2 className="animate-spin" size={32} color="#fff" />
                             ) : user?.profilePicture ? (
                                 <img src={user.profilePicture} alt="Profile" className="g-avatar-img" />
                             ) : (
-                                <Sword size={26} color="#fff" />
+                                <Sword size={34} color="#fff" />
                             )}
                         </div>
                         <div className="g-avatar-upload-overlay">
-                            <Camera size={18} color="#fff" />
+                            <Camera size={24} color="#fff" />
                         </div>
                     </div>
 
                     {/* Player info */}
                     <div className="g-player-info">
-                        <div className="g-player-top">
-                            <span className="g-player-tag">◈ OYUNÇU</span>
-                            <span className="g-online-dot" />
-                            <span className="g-online-txt">ONLİNE</span>
-                        </div>
-                        <h1 className="g-player-name">
+                        <h1 className="g-player-name" style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {user?.name} <span className="g-player-surname">{user?.surname}</span>
+                            {user?.grade && (
+                                <span style={{
+                                    fontSize: '0.65rem',
+                                    fontWeight: 900,
+                                    background: 'rgba(56, 189, 248, 0.12)',
+                                    color: '#38bdf8',
+                                    padding: '4px 10px',
+                                    borderRadius: '8px',
+                                    letterSpacing: '1px',
+                                    marginLeft: '4px',
+                                    height: 'fit-content',
+                                    border: '1px solid rgba(56, 189, 248, 0.2)'
+                                }}>
+                                    Sinif {user.grade.replace(/Sinif\s*/g, '')}
+                                </span>
+                            )}
                         </h1>
-                        <p className="g-player-sub">Bugün hansı riyazi zirvəni fəth edəcəyik?</p>
+
+                        {/* Overall progress - EVEN MORE COMPACT */}
+                        <div className="g-overall-progress" style={{ marginTop: '0.6rem', width: '100%', maxWidth: '280px', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 0.8rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="g-overall-label" style={{ marginBottom: '4px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '0.55rem', letterSpacing: '0.8px', opacity: 0.7 }}>KAMPANIYA</span>
+                                <span className="g-overall-pct" style={{ color: '#6366f1', fontWeight: 900, fontSize: '0.7rem' }}>{overallPct}%</span>
+                            </div>
+                            <div className="g-overall-track" style={{ height: '4px', marginBottom: '4px' }}>
+                                <motion.div
+                                    className="g-overall-fill"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${overallPct}%` }}
+                                    transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span className="g-overall-sub" style={{ fontSize: '0.55rem', opacity: 0.5 }}>{completedCount}/{LEVELS.length} Səviyyə</span>
+                            </div>
+                        </div>
+
+                        {/* Rank Progress */}
+                        {rankInfo && (
+                            <div className="g-overall-progress" style={{ marginTop: '0.6rem', width: '100%', maxWidth: '280px', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 0.8rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div className="g-overall-label" style={{ marginBottom: '4px' }}>
+                                    <span style={{ fontWeight: 800, fontSize: '0.55rem', letterSpacing: '0.8px', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {rankInfo.currentRank ? renderRankIcon(rankInfo.currentRank.icon, 12) : <Award size={12} />}
+                                        {rankInfo.currentRank?.name || 'YENİ'}
+                                    </span>
+                                    {rankInfo.nextRank ? (
+                                        <span className="g-overall-pct" style={{ color: '#ec4899', fontWeight: 900, fontSize: '0.55rem' }}>
+                                            Növbəti: {rankInfo.nextRank.name}
+                                        </span>
+                                    ) : (
+                                        <span className="g-overall-pct" style={{ color: '#f59e0b', fontWeight: 900, fontSize: '0.55rem' }}>MAX RANK</span>
+                                    )}
+                                </div>
+                                <div className="g-overall-track" style={{ height: '4px', marginBottom: '4px' }}>
+                                    <motion.div
+                                        className="g-overall-fill"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${rankInfo.nextRank ? Math.min(100, Math.round((rankInfo.totalAnswered / rankInfo.nextRank.minQuestions) * 100)) : 100}%` }}
+                                        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                                        style={{ background: 'linear-gradient(90deg, #ec4899, #8b5cf6)' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span className="g-overall-sub" style={{ fontSize: '0.55rem', opacity: 0.5 }}>
+                                        {rankInfo.totalAnswered} / {rankInfo.nextRank?.minQuestions || rankInfo.totalAnswered} Sual
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Overall progress */}
-                    <div className="g-overall-progress">
-                        <div className="g-overall-label">
-                            <span>KAMPANIYA</span>
-                            <span className="g-overall-pct" style={{ color: '#6366f1' }}>{overallPct}%</span>
+                    {/* ── STREAKS AS 2x2 GRID ── */}
+                    {userStreaks && (
+                        <div className="g-streaks-grid" style={{ marginLeft: 'auto', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', minWidth: '400px' }}>
+                            {[
+                                { key: 'daily', label: 'GÜNLÜK', val: userStreaks.currentDailyStreak, icon: <Flame size={14} fill="#f97316" />, color: '#f97316' },
+                                { key: 'question', label: 'DOĞRU SUAL', val: userStreaks.currentQuestionStreak, icon: <Target size={14} />, color: '#3b82f6' },
+                                { key: 'stage', label: 'MƏRHƏLƏ', val: userStreaks.currentStageStreak, icon: <Star size={14} fill="#8b5cf6" />, color: '#8b5cf6' },
+                                { key: 'battle', label: 'QƏLƏBƏ', val: userStreaks.currentBattleStreak, icon: <ShieldCheck size={14} />, color: '#ef4444' }
+                            ].map((st, idx) => {
+                                const milestone = userStreaks.upcomingMilestones?.[st.key];
+                                const target = milestone?.requirement || st.val || 1;
+                                const progressPct = Math.min(100, (st.val / target) * 100);
+
+                                return (
+                                    <div key={idx} style={{ 
+                                        background: 'rgba(255,255,255,0.02)', 
+                                        padding: '10px 14px', 
+                                        borderRadius: '14px', 
+                                        border: '1px solid rgba(255,255,255,0.05)', 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        gap: '8px',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ color: st.color, display: 'flex' }}>{st.icon}</div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>{st.label}</div>
+                                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '4px', overflow: 'hidden' }}>
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${progressPct}%` }}
+                                                        style={{ height: '100%', background: st.color, boxShadow: `0 0 8px ${st.color}44` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                                                <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff' }}>{st.val}</span>
+                                                {milestone && (
+                                                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', fontWeight: 800 }}>/{target}</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Rewards section */}
+                                        {milestone ? (
+                                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', opacity: 0.9 }}>
+                                                {milestone.rewardAzn > 0 && (
+                                                    <span style={{ color: '#10b981', fontSize: '0.55rem', fontWeight: 900, background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                                                        +{milestone.rewardAzn}AZN
+                                                    </span>
+                                                )}
+                                                {milestone.rewardChest > 0 && (
+                                                    <span style={{ color: '#f59e0b', fontSize: '0.55rem', fontWeight: 900, background: 'rgba(245, 158, 11, 0.1)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                                        +{milestone.rewardChest} <Gift size={10} />
+                                                    </span>
+                                                )}
+                                                {milestone.rewardItemProgress > 0 && (
+                                                    <span style={{ color: '#8b5cf6', fontSize: '0.55rem', fontWeight: 900, background: 'rgba(139, 92, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                                                        +{milestone.rewardItemProgress}%⭐
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.2)' }}>BÜTÜN MÜKAFATLAR QAZANILIB</div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
-                        <div className="g-overall-track">
-                            <motion.div
-                                className="g-overall-fill"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${overallPct}%` }}
-                                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                            />
-                        </div>
-                        <span className="g-overall-sub">{completedCount} / {LEVELS.length} Səviyyə tamamlandı</span>
-                    </div>
+                    )}
                 </motion.div>
 
                 {/* ── SIDEBAR CLASS NAV ── */}
@@ -425,6 +611,47 @@ const Dashboard: React.FC = () => {
                         </motion.div>
                     ))}
                 </div>
+
+
+                {/* ── DAILY QUIZ BANNER ── */}
+                {dailyQuizStatus.available && (
+                    <motion.div
+                        className="daily-quiz-banner glass-card"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={{
+                            marginBottom: '2rem',
+                            padding: '1.5rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: dailyQuizStatus.alreadyPlayed ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2))',
+                            border: `1px solid ${dailyQuizStatus.alreadyPlayed ? 'rgba(255,255,255,0.1)' : 'rgba(236, 72, 153, 0.5)'}`
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ background: dailyQuizStatus.alreadyPlayed ? '#374151' : '#ec4899', padding: '0.8rem', borderRadius: '12px' }}>
+                                <CalendarDays size={28} color="white" />
+                            </div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.2rem', color: dailyQuizStatus.alreadyPlayed ? 'rgba(255,255,255,0.5)' : '#fff', fontWeight: 800 }}>
+                                    Günlük Quiz
+                                </h3>
+                                <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+                                    {dailyQuizStatus.alreadyPlayed ? 'Bugünkü Daily Quiz artıq tamamlanıb.' : 'Gündəlik xüsusi quizi tamamla, mükafat qazan!'}
+                                </p>
+                            </div>
+                        </div>
+                        {!dailyQuizStatus.alreadyPlayed && (
+                            <button
+                                onClick={() => navigate('/daily-quiz')}
+                                style={{ background: '#ec4899', color: 'white', padding: '0.8rem 2rem', borderRadius: '30px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 0 15px rgba(236,72,153,0.5)', display: 'flex', alignItems: 'center' }}
+                            >
+                                <PlayCircle size={18} style={{ marginRight: '8px' }} /> İndi Başla
+                            </button>
+                        )}
+                    </motion.div>
+                )}
 
                 {/* ── LEVEL JOURNEY ── */}
                 <div className="g-section-header">

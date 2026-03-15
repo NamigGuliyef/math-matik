@@ -14,7 +14,12 @@ import {
     X,
     Zap,
     Play,
-    Loader2
+    Loader2,
+    Star,
+    Trophy,
+    Target,
+    Crown,
+    Medal
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -67,6 +72,20 @@ const getImageUrl = (path?: string) => {
     return `${API_BASE_CLEAN}${normalizedPath}`;
 };
 
+const renderRankIcon = (iconName: string, size = 18) => {
+    switch (iconName) {
+        case 'Trophy': return <Trophy size={size} />;
+        case 'Target': return <Target size={size} />;
+        case 'Zap': return <Zap size={size} />;
+        case 'Crown': return <Crown size={size} />;
+        case 'Sword': return <Sword size={size} />;
+        case 'Shield': return <Shield size={size} />;
+        case 'Award': return <Award size={size} />;
+        case 'Medal': return <Medal size={size} />;
+        default: return <Star size={size} />;
+    }
+};
+
 const Fighter: React.FC = () => {
     const { user, token, updateUser } = useAuth();
     const { showNotification } = useNotification();
@@ -87,6 +106,7 @@ const Fighter: React.FC = () => {
     const [shopItems, setShopItems] = useState<FighterItem[]>([]);
     const [shopCharacters, setShopCharacters] = useState<Character[]>([]);
     const [balance, setBalance] = useState<number>(user?.balance || 0);
+    const [rankInfo, setRankInfo] = useState<{ currentRank: any; nextRank: any; totalAnswered: number } | null>(null);
     const [loading, setLoading] = useState(true);
 
     const handleClaimProgress = async (itemId: string) => {
@@ -280,6 +300,20 @@ const Fighter: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        const fetchRank = async () => {
+            try {
+                const res = await axios.get(`${API_BASE_CLEAN}/ranks/my-rank`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setRankInfo(res.data);
+            } catch (err) {
+                console.error('Error fetching rank info:', err);
+            }
+        };
+        fetchRank();
+    }, [token]);
+
     const handleEquip = async (inventoryId: string) => {
         try {
             console.log('Equipping:', inventoryId);
@@ -384,6 +418,15 @@ const Fighter: React.FC = () => {
                         ...data,
                         isUserWinner: String(data.winnerId) === String(data.battle.userId)
                     });
+
+                    // --- Notify Streak Rewards ---
+                    if (data.streakRewards && data.streakRewards.length > 0) {
+                        data.streakRewards.forEach((milestone: any) => {
+                            showNotification(`🔖 Döyüş Streak! ${milestone.requirement} qələbə/gün! Mükafat verildi.`, 'success');
+                        });
+                    }
+                    // -----------------------------
+
                     if (data.newBalance !== undefined) setBalance(data.newBalance);
                     fetchFighterData();
                 }, 500);
@@ -424,6 +467,16 @@ const Fighter: React.FC = () => {
                 <Coins className="coin-icon" />
                 <span>{Number(balance).toFixed(3).replace(/\.?0+$/, '')} AZN</span>
             </div>
+
+            {/* Rank Status */}
+            {rankInfo?.currentRank && (
+                <div className="balance-card" style={{ left: 'auto', right: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem 1.2rem' }}>
+                    <div style={{ color: 'var(--primary)', display: 'flex' }}>
+                        {renderRankIcon(rankInfo.currentRank.icon, 20)}
+                    </div>
+                    <span style={{ fontWeight: 800, color: '#fff', fontSize: '0.9rem' }}>{rankInfo.currentRank.name}</span>
+                </div>
+            )}
 
             {/* Tabs */}
             <div className="fighter-tabs">

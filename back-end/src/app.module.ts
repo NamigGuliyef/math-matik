@@ -11,6 +11,9 @@ import { ConfigModule } from '@nestjs/config';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ChatModule } from './chat/chat.module';
 import { MissionsModule } from './missions/missions.module';
+import { DailyQuizModule } from './daily-quiz/daily-quiz.module';
+import { StreaksModule } from './streaks/streaks.module';
+import { RanksModule } from './ranks/ranks.module';
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { MissionsModule } from './missions/missions.module';
     CloudinaryModule,
     ChatModule,
     MissionsModule,
+    DailyQuizModule,
+    StreaksModule,
+    RanksModule,
   ],
   controllers: [LeaderboardController],
   providers: [],

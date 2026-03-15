@@ -15,9 +15,11 @@ import { Battle, BattleSchema } from './schemas/battle.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { MissionsModule } from '../missions/missions.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { StreaksModule } from '../streaks/streaks.module';
 
 @Module({
   imports: [
+    StreaksModule,
     MongooseModule.forFeature([
       { name: FighterItem.name, schema: FighterItemSchema },
       { name: UserInventory.name, schema: UserInventorySchema },

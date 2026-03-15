@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../api/client';
-import { Medal, Crown, Loader2, Sword } from 'lucide-react';
+import { Medal, Crown, Loader2, Sword, Star, Trophy, Target, Zap, Shield, Award } from 'lucide-react';
+
+const renderRankIcon = (iconName: string, size = 18) => {
+    switch (iconName) {
+        case 'Trophy': return <Trophy size={size} />;
+        case 'Target': return <Target size={size} />;
+        case 'Zap': return <Zap size={size} />;
+        case 'Crown': return <Crown size={size} />;
+        case 'Sword': return <Sword size={size} />;
+        case 'Shield': return <Shield size={size} />;
+        case 'Award': return <Award size={size} />;
+        case 'Medal': return <Medal size={size} />;
+        default: return <Star size={size} />;
+    }
+};
 
 const getRankStyle = (index: number) => {
     if (index === 0) return { color: '#FFD700', fill: 'rgba(255, 215, 0, 0.1)' };
@@ -39,19 +53,22 @@ const Leaderboard: React.FC = () => {
     const [quizLeaders, setQuizLeaders] = useState<any[]>([]);
     const [battleLeaders, setBattleLeaders] = useState<any[]>([]);
     const [classLeaders, setClassLeaders] = useState<any[]>([]);
+    const [ranks, setRanks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [quizRes, battleRes, classRes] = await Promise.all([
+                const [quizRes, battleRes, classRes, ranksRes] = await Promise.all([
                     api.get('/leaderboard'),
                     api.get('/fighter/battle/leaderboard'),
                     api.get('/leaderboard/class-ranking'),
+                    api.get('/ranks'),
                 ]);
                 setQuizLeaders(quizRes.data);
                 setBattleLeaders(battleRes.data);
                 setClassLeaders(classRes.data);
+                setRanks(ranksRes.data);
             } catch (err) {
                 console.error('Error fetching leaderboard:', err);
             } finally {
@@ -60,6 +77,12 @@ const Leaderboard: React.FC = () => {
         };
         fetchAll();
     }, []);
+
+    const getUserRank = (totalAnswered: number) => {
+        if (!ranks.length) return null;
+        return [...ranks].sort((a, b) => b.minQuestions - a.minQuestions)
+            .find(r => totalAnswered >= r.minQuestions);
+    };
 
     if (isLoading) {
         return (
@@ -133,7 +156,14 @@ const Leaderboard: React.FC = () => {
                                         <RankCell index={index} />
                                     </td>
                                     <td style={{ padding: '1rem 0.75rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                                        {student.name} {student.surname}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {student.name} {student.surname}
+                                            {getUserRank(student.totalAnswered || 0) && (
+                                                <div title={getUserRank(student.totalAnswered || 0)?.name} style={{ color: 'var(--warning)', display: 'flex' }}>
+                                                    {renderRankIcon(getUserRank(student.totalAnswered || 0)!.icon, 14)}
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                     <td style={{ padding: '1rem 0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>
                                         {student.grade}

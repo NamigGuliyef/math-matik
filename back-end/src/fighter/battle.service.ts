@@ -6,6 +6,7 @@ import { UserInventory } from './schemas/user-inventory.schema';
 import { Battle } from './schemas/battle.schema';
 import { MissionsService } from '../missions/missions.service';
 import { MissionType } from '../missions/schemas/mission.schema';
+import { StreaksService } from '../streaks/streaks.service';
 
 @Injectable()
 export class BattleService {
@@ -15,6 +16,7 @@ export class BattleService {
     private inventoryModel: Model<UserInventory>,
     @InjectModel(Battle.name) private battleModel: Model<Battle>,
     private readonly missionsService: MissionsService,
+    private readonly streaksService: StreaksService,
   ) {}
 
   async getUserStats(userId: string) {
@@ -282,9 +284,12 @@ export class BattleService {
       }
 
       await this.userModel.findByIdAndUpdate(battle.userId, userUpdate);
-      await this.userModel.findByIdAndUpdate(battle.opponentId, {
-        $inc: { balance: opponentReward },
-      });
+
+      const opponentUpdate: any = { $inc: { balance: opponentReward } };
+      if (!isUserWinner) {
+        opponentUpdate.$inc.totalBattlesWon = 1;
+      }
+      await this.userModel.findByIdAndUpdate(battle.opponentId, opponentUpdate);
 
       if (isUserWinner) {
         await this.missionsService.trackProgress(
@@ -293,6 +298,28 @@ export class BattleService {
           1,
         );
       }
+
+      // --- Streak Tracking ---
+      const streakRewards: any[] = [];
+      try {
+        const dailyLog = await this.streaksService.logActivity(battle.userId.toString(), 'daily', true);
+        const battleLog = await this.streaksService.logActivity(battle.userId.toString(), 'battle', isUserWinner);
+        
+        if (dailyLog?.rewardedMilestones) streakRewards.push(...dailyLog.rewardedMilestones);
+        if (battleLog?.rewardedMilestones) streakRewards.push(...battleLog.rewardedMilestones);
+      } catch (e) {
+        console.error('Error logging streak activity during battle completion:', e);
+      }
+      
+      await battle.save();
+
+      return {
+        battle,
+        round,
+        finished: battleFinished,
+        winnerId: battle.winnerId,
+        streakRewards,
+      };
     }
 
     await battle.save();
@@ -423,7 +450,15 @@ export class BattleService {
     // Aggregate battles by winnerId, count wins, top 20
     const winners = await this.battleModel
       .aggregate([
-        { $group: { _id: '$winnerId', wins: { $sum: 1 } } },
+        {
+          $match: { status: 'finished', winnerId: { $exists: true, $ne: null } },
+        },
+        {
+          $group: {
+            _id: { $toObjectId: '$winnerId' },
+            wins: { $sum: 1 },
+          },
+        },
         { $sort: { wins: -1 } },
         { $limit: 20 },
         {
@@ -443,6 +478,7 @@ export class BattleService {
             surname: '$user.surname',
             fatherName: '$user.fatherName',
             level: '$user.level',
+            grade: '$user.grade',
           },
         },
       ])
